@@ -2,3 +2,7 @@ RCS
 *~
 build
 autom4te.cache
+include/utd
+lib
+src/developer/tmp
+src/developer/sverilog.output

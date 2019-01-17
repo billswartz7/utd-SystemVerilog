@@ -11,12 +11,22 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include <verilog/preprocessor.h>
-#include <verilog/ast_util.h>
+typedef struct sverilog_preprocessor_context_rec *SVERILOG_PARSEPTR ;
 
+//! Parser initialize code, returns a parsing object.
+extern SVERILOG_PARSEPTR sverilog_parser_init(void) ;
 
-//! This is defined in the generated bison parser code.
-extern verilog_preprocessor_context *verilog_parser_init(void) ;
+//! Parser adds to the directory search paths
+extern void sverilog_parser_add_search_path( SVERILOG_PARSEPTR parse_p,
+                                             const char *path ) ;
+
+//! Add the default callbacks.
+extern void sverilog_parser_add_default_callbacks( SVERILOG_PARSEPTR parse_p ) ;
+
+// The top level parsing interface
+extern int sverilog_parse_file( SVERILOG_PARSEPTR parse_p, char *filename ) ;
+
+#ifdef LATER
 
 extern verilog_source_tree *verilog_parser_get_source_tree(void) ;
 
@@ -24,6 +34,7 @@ extern verilog_source_tree *verilog_parser_get_source_tree(void) ;
 @brief Perform a parsing operation on the currently selected buffer.
 */
 extern int verilog_parse_file(FILE * to_parse) ;
+#endif /* LATER */
 
 #ifdef __cplusplus
 } ;

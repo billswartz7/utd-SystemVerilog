@@ -1,4 +1,21 @@
 
+#ifndef H_SVERILOG_SCANNER_H
+#define H_SVERILOG_SCANNER_H
+
+#ifndef YY_TYPEDEF_YY_SIZE_T
+#define YY_TYPEDEF_YY_SIZE_T
+typedef size_t yy_size_t;
+#endif
+
+#ifndef YY_BUF_SIZE
+    #define YY_BUF_SIZE 16384
+#endif
+
+typedef struct yy_buffer_state *YY_BUFFER_STATE;
+extern void sverilog__switch_to_buffer (YY_BUFFER_STATE new_buffer ) ;
+extern YY_BUFFER_STATE sverilog__create_buffer (FILE *file,int size  );
+
+#ifdef LATER
 /*!
 @file verilog_parser.h
 @brief A nice interface for the whole verilog parser.
@@ -7,25 +24,9 @@ as well as an easy way to change the input stream.
 @note Functions declared in this file are defined in verilog_parser_wrapper.c
 */
 
-#include <stdio.h>
 
-// Essential to make sure we have access to all of the yy functions.
-#include <verilog/preprocessor.h>
-
-#ifndef H_VERILOG_SCANNER_H
-#define H_VERILOG_SCANNER_H
-
-#ifndef YY_TYPEDEF_YY_SIZE_T
-#define YY_TYPEDEF_YY_SIZE_T
-typedef size_t yy_size_t;
-#endif
  
-#ifndef YY_BUF_SIZE
-    #define YY_BUF_SIZE 16384
-#endif
-typedef struct yy_buffer_state *YY_BUFFER_STATE;
 extern void yyrestart (FILE *input_file  );
-extern void open_verilog_switch_to_buffer (YY_BUFFER_STATE new_buffer  );
 extern YY_BUFFER_STATE open_verilog_create_buffer (FILE *file,int size  );
 extern YY_BUFFER_STATE open_verilog_scan_buffer (char *base,yy_size_t size  );
 extern YY_BUFFER_STATE open_verilog_scan_bytes (const char *bytes,int len  );
@@ -162,5 +163,6 @@ the second will not.
 extern int verilog_parse_buffer(char * to_parse, int length) ;
 
 /*! }@ */
+#endif /* LATER */
 
-#endif
+#endif /* H_SVERILOG_SCANNER_H */

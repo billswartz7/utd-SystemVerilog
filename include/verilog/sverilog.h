@@ -1,42 +1,13 @@
-/*!
-@file ast.h
-@brief Contains Declarations of datastructures and functions which represent
-       and operate on the Verilog Abstract Syntax Tree (AST)
-*/
-
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <verilog/ast_common.h>
-
 #ifndef VERILOG_AST_H
 #define VERILOG_AST_H
 
-extern int open_veriloglineno;
+typedef enum  sverilog_boolean_e {
+    SVERILOG_TRUE = 1,
+    SVERILOG_FALSE = 0
+} SVERILOG_BOOLEAN_T ;
 
-//! Forward declare. Defines the core node type for the AST.
-typedef struct ast_node_t ast_node;
-
-/*! 
-@brief Typedef to make it easier to change into a proper structure later.
-@note The pointer is already included in the type.
-*/
-typedef struct ast_identifier_t * ast_identifier;
-
-//! Placeholder until this is implemented properly.
-typedef struct ast_concatenation_t ast_concatenation;
- 
-//! Expression type over a struct
-typedef struct ast_expression_t ast_expression;
-//! Expression type over a struct
-typedef struct ast_function_call_t ast_function_call;
-
-//! An item within a module. Duh.
-typedef struct ast_module_item_t ast_module_item;
-    
 //! Stores different Operators.
-typedef enum ast_operator_e{
+typedef enum sverilog_operator_e {
     OPERATOR_STAR    , //!<
     OPERATOR_PLUS    , //!<
     OPERATOR_MINUS   , //!<
@@ -67,35 +38,38 @@ typedef enum ast_operator_e{
     OPERATOR_B_NOR   , //!<
     OPERATOR_TERNARY , //!<
     OPERATOR_NONE = 0
-} ast_operator;
+} SVERILOG_OPERATOR_T ;
 
-typedef char * ast_string       ;
-//! A set of lvalue and corresponding assigned expressions
-typedef struct ast_assignment_t ast_assignment;
-//! A single lvalue=expression assignment.
-typedef struct ast_single_assignment_t ast_single_assignment;
-//! Generate block (of statements) type.
-typedef struct ast_generate_block_t ast_generate_block;
-typedef struct ast_delay3_t ast_delay3;
-typedef struct ast_delay2_t ast_delay2;
-// typedef struct ast_delay_value_t ast_delay_value  ;
-typedef struct ast_pull_strength_t ast_drive_strength;
-typedef void * ast_macro_use    ;
-typedef void * ast_minmax_exp   ;
-//! Number data structure.
-typedef struct ast_number_t ast_number ;
-typedef struct ast_range_t ast_range ;
-typedef struct ast_block_item_declaration_t ast_block_item_declaration;
-typedef void * ast_tf_input_declaration;
-typedef struct ast_statement_t ast_statement;
-typedef struct ast_module_declaration_t ast_module_declaration;
+//! Describes the type of a net in Verilog.
+typedef enum sverilog_net_type_e {
+    NET_TYPE_SUPPLY0,   //!< Logic 0 supply rail
+    NET_TYPE_SUPPLY1,   //!< Logic 1 supply rail.
+    NET_TYPE_TRI,       //!< Tri-state
+    NET_TYPE_TRIAND,    //!< Tri-state AND
+    NET_TYPE_TRIOR,     //!< Tri-state OR
+    NET_TYPE_TRIREG,    //!< Tri-state reg wire
+    NET_TYPE_WIRE,      //!< Wire
+    NET_TYPE_WAND,      //!< ?
+    NET_TYPE_WOR,       //!< ?
+    NET_TYPE_NONE       //!< Use only when not specified!
+} SVERILOG_NET_TYPE_T ;
 
-//! Stores the values of booleans.
-typedef enum  ast_boolean_e
-{
-    AST_TRUE=1,
-    AST_FALSE=0
-} ast_boolean;
+//! Describes the drive strength of a single primitive.
+typedef enum sverilog_primitive_strength_e {
+    STRENGTH_HIGHZ0,
+    STRENGTH_HIGHZ1,
+    STRENGTH_SUPPLY0,
+    STRENGTH_STRONG0,
+    STRENGTH_PULL0,
+    STRENGTH_WEAK0,
+    STRENGTH_SUPPLY1,
+    STRENGTH_STRONG1,
+    STRENGTH_PULL1,
+    STRENGTH_WEAK1,
+    STRENGTH_NONE
+} SVERILOG_PRIMITIVE_STRENGTH_T ;
+
+#ifdef LATER
 
 //! Describes a rising or falling edge, or where none is specified.
 typedef enum ast_edge_e{
@@ -113,36 +87,8 @@ typedef enum ast_port_direction_e{
     PORT_NONE,  //!< Used for when we don't know at declaration time.
 } ast_port_direction;
 
-/*!
-@defgroup ast-node-meta Meta Data
-@{
-@ingroup ast-construction
-@brief Objects used to represent meta data about a particular construct.
-*/
-
-//! Refers to a source code file line number.
-typedef int ast_line;
-//! Refers to a source code file name.
-typedef char * ast_file;
-
-/*!
-@brief Stores "meta" information and other tagging stuff about nodes.
-*/
-typedef struct ast_metadata_t{
-    ast_line line;  //!< The line number the construct came from.
-    ast_file file;  //!< The file the construct came from.
-} ast_metadata;
-
-/*! @} */
 
 //-------------- Numbers ---------------------------------------
-
-/*!
-@defgroup ast-node-numbers Numbers
-@{
-@ingroup ast-construction
-@brief Objects used to represent individual numbers.
-*/
 
 //! Base value of a number representation.
 typedef enum ast_number_base_e{
@@ -173,23 +119,6 @@ struct ast_number_t{
         int    as_int;
     };
 };
-
-/*!
-@brief Creates a new number representation object.
-*/
-extern ast_number * ast_new_number(
-    ast_number_base base,   //!< What is the base of the number.
-    ast_number_representation representation,   //!< How to interepret digits.
-    char  * digits  //!< The string token representing the number.
-);
-
-/*!
-@brief A utility function for converting an ast number into a string.
-@param [in] n - The number to turn into a string.
-*/
-extern char * ast_number_tostring(
-    ast_number * n
-);
 
 
 /*! @} */
@@ -260,13 +189,6 @@ typedef enum ast_concatenation_type_e
     CONCATENATION_MODULE_PATH           //!< Module path concatenation.
 } ast_concatenation_type;
 
-//! Fully describes a concatenation in terms of type and data.
-struct ast_concatenation_t{
-    ast_metadata    meta;   //!< Node metadata.
-    ast_concatenation_type   type;  //!< The type of concatenation
-    ast_expression         * repeat;//!< The number of repetitions. Normally 1.
-    ast_list               * items; //!< sequence of items.
-};
 
 /*!
 @brief Creates a new AST concatenation element with the supplied type and
@@ -1908,20 +1830,6 @@ extern ast_switch_gate * ast_new_switch_gate_d2(
     ast_delay2     * delay
 );
 
-//! Describes the drive strength of a single primitive.
-typedef enum ast_primitive_strength_e{
-    STRENGTH_HIGHZ0,
-    STRENGTH_HIGHZ1,
-    STRENGTH_SUPPLY0,
-    STRENGTH_STRONG0,
-    STRENGTH_PULL0,
-    STRENGTH_WEAK0,
-    STRENGTH_SUPPLY1,
-    STRENGTH_STRONG1,
-    STRENGTH_PULL1,
-    STRENGTH_WEAK1,
-    STRENGTH_NONE
-} ast_primitive_strength;
 
 //! Describes pull direction.
 typedef enum ast_pull_direction_e{
@@ -2368,19 +2276,6 @@ typedef enum ast_charge_strength_e{
 @brief 
 */
 
-//! Describes the type of a net in Verilog.
-typedef enum ast_net_type_e{
-    NET_TYPE_SUPPLY0,   //!< Logic 0 supply rail
-    NET_TYPE_SUPPLY1,   //!< Logic 1 supply rail.
-    NET_TYPE_TRI,       //!< Tri-state
-    NET_TYPE_TRIAND,    //!< Tri-state AND
-    NET_TYPE_TRIOR,     //!< Tri-state OR
-    NET_TYPE_TRIREG,    //!< Tri-state reg wire
-    NET_TYPE_WIRE,      //!< Wire
-    NET_TYPE_WAND,      //!< ?
-    NET_TYPE_WOR,       //!< ?
-    NET_TYPE_NONE       //!< Use only when not specified!
-} ast_net_type;
 
 //! Fully describes a single port declaration
 typedef struct ast_port_declaration_t{
@@ -3335,5 +3230,6 @@ extern ast_node * ast_node_new();
 
 /*! @} */
 
+#endif /* LATER */
 
 #endif

@@ -5,55 +5,43 @@
 
 #include "stdio.h"
 
-#include <verilog/preprocessor.h>
-#include <verilog/ast_util.h>
+#include <verilog/parse.h>
 #include <verilog/parse.h>
 
 int main(int argc, char ** argv)
 {
-    if(argc < 2)
-    {
+    if(argc < 2) {
         printf("ERROR. Please supply at least one file path argument.\n");
         return 1;
-    }
-    else
-    {
-        int F = 0;
-            
-        // Initialise the parser.
-        verilog_parser_init();
+    } else {
 
-        // Setup the preprocessor to look in ./tests/ for include files.
-        ast_list_append(yy_preproc -> search_dirs, "./tests/");
-        ast_list_append(yy_preproc -> search_dirs, "./");
+      // Initialise the parser.
+      SVERILOG_PARSEPTR parse_p = sverilog_parser_init() ;
 
-        for(F = 1; F < argc; F++)
-        {
-            printf("%s ", argv[F]);fflush(stdout);
+      // Setup the order to search for Verilog include files
+      sverilog_parser_add_search_path( parse_p, "./tests/" ) ;
+      sverilog_parser_add_search_path( parse_p, "../tests/" ) ;
+      sverilog_parser_add_search_path( parse_p, "./" ) ;
 
-            // Load the file.
-            FILE * fh = fopen(argv[F], "r");
+      sverilog_parser_add_default_callbacks( parse_p ) ;
 
-            verilog_preprocessor_set_file(yy_preproc, argv[F]);
-            
-            // Parse the file and store the result.
-            int result = verilog_parse_file(fh);
+      // Install your personalized callbacks here.
+      //
 
-            // Close the file handle
-            fclose(fh);
-            
-            if(result == 0)
-            {
-                printf(" - Parse successful\n");
-            }
-            else
-            {
-                printf(" - Parse failed\n");
-                if(argc<=2) return 1;
-            }
+      for( int fcount = 1 ; fcount < argc; fcount++ ) {
+	char *filename = argv[fcount] ;
+	printf("%s ", filename ) ;
+	fflush(stdout) ;
+
+	// Parse the file and store the result.
+	int result = sverilog_parse_file( parse_p, filename ) ;
+
+	if ( result == 0 ) {
+	  printf(" - Parse successful\n");
+	} else {
+	  printf(" - Parse failed\n");
         }
+      }
     }
-    verilog_resolve_modules(yy_verilog_source_tree);
-    ast_free_all();
-    return 0;
+    return (0) ;
 }
