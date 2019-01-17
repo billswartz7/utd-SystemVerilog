@@ -1,0 +1,3 @@
+/Users/bill/version1/openroad/openroad.0.9/lib/verilog/docs/CMakeFiles/rebuild_cache.dir
+/Users/bill/version1/openroad/openroad.0.9/lib/verilog/docs/CMakeFiles/edit_cache.dir
+/Users/bill/version1/openroad/openroad.0.9/lib/verilog/docs/CMakeFiles/verilogparser-docs.dir
