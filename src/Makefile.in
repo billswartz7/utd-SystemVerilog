@@ -147,7 +147,8 @@ libopen_sverilog_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(LDFLAGS) -o $@
 am_testparser_OBJECTS = main.$(OBJEXT)
 testparser_OBJECTS = $(am_testparser_OBJECTS)
-testparser_DEPENDENCIES = ../lib/libutd.la libopen_sverilog.la
+testparser_DEPENDENCIES = $(abs_top_srcdir)/lib/libutd.la \
+	libopen_sverilog.la
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -349,7 +350,7 @@ PUBLIC_HDRS = \
 libopen_sverilog_la_LDFLAGS = -version-info 1:0:0
 testparser_SOURCES = main.c
 testparser_LDADD = \
-		../lib/libutd.la \
+		$(abs_top_srcdir)/lib/libutd.la \
 		libopen_sverilog.la
 
 ACLOCAL_AMFLAGS = -I m4

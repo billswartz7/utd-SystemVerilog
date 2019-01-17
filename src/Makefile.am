@@ -16,7 +16,7 @@ bin_PROGRAMS = testparser
 testparser_SOURCES = main.c
 
 testparser_LDADD = \
-		../lib/libutd.la \
+		$(abs_top_srcdir)/lib/libutd.la \
 		libopen_sverilog.la
 
 ACLOCAL_AMFLAGS=-I m4
