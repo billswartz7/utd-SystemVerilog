@@ -6,10 +6,15 @@
 #include "stdio.h"
 
 #include <verilog/parse.h>
-#include <verilog/parse.h>
+#include <utd/base.h>
+#include <utd/file.h>
 
 int main(int argc, char ** argv)
 {
+    int fcount ;		/* file counter */
+    FILE *pre_output_p ;	/* preprocessor output file */
+    char preproc_file[LRECL] ;	/* build a file name */
+
     if(argc < 2) {
         printf("ERROR. Please supply at least one file path argument.\n");
         return 1;
@@ -28,16 +33,31 @@ int main(int argc, char ** argv)
       // Install your personalized callbacks here.
       //
 
-      for( int fcount = 1 ; fcount < argc; fcount++ ) {
+      for( fcount = 1 ; fcount < argc; fcount++ ) {
 	char *filename = argv[fcount] ;
 	printf("%s ", filename ) ;
 	fflush(stdout) ;
 
+	/* output the result of the preprocessor */
+	sprintf( preproc_file, "%s.preproc", filename ) ; 
+	pre_output_p = UTDOPEN( preproc_file, "w", FILE_VERBOSE | FILE_NOABORT ) ;
+	sverilog_parser_set_preprocess_output( parse_p, pre_output_p ) ;
+
 	// Parse the file and store the result.
 	int result = sverilog_parse_file( parse_p, filename ) ;
 
+	if( pre_output_p ){
+	  UTDCLOSE( pre_output_p ) ;
+	  sverilog_parser_set_preprocess_output( parse_p, NULL ) ;
+	}
+
 	if ( result == 0 ) {
-	  printf(" - Parse successful\n");
+	  int num_errors = sverilog_parser_get_errors( parse_p ) ;
+	  if( num_errors ){
+	    printf(" - Errors detected but parse successful\n");
+	  } else {
+	    printf(" - Parse successful\n");
+	  }
 	} else {
 	  printf(" - Parse failed\n");
         }
