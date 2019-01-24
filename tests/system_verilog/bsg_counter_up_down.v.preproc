@@ -1,6 +1,0 @@
-
-
-module bsg_counter_up_down #(parameter max_val_p   = "inv"
-                             ,parameter init_val_p = "inv"
-
-                             ,parameter ptr_width_lp = $clog2

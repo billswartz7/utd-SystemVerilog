@@ -1,7 +1,0 @@
- 
- 
-
-
-module cl_state_machine
-(
-    input instruction_s instruction_i

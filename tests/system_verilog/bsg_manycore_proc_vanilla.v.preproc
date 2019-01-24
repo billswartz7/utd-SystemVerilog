@@ -1,6 +1,0 @@
- 
- 
-
- 
-
-module bsg_manycore_proc_vanilla #(x_cord_width_p

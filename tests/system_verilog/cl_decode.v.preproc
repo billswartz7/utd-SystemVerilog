@@ -1,7 +1,0 @@
- 
- 
-
-
-module cl_decode
-(
-    input  instruction_s instruction_i

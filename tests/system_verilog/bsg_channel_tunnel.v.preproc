@@ -1,6 +1,0 @@
-
-module bsg_channel_tunnel #(parameter width_p        = 1
-                            , num_in_p               = "inv"
-                            , remote_credits_p       = "inv"
-                            , use_pseudo_large_fifo_p = 0
-                            , lg_remote_credits_lp   = $clog2

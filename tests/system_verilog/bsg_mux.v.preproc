@@ -1,8 +1,0 @@
-module bsg_mux #(
-  parameter width_p    = "inv",
-  parameter els_p      = "inv",
-  parameter harden_p   = 1,
-  parameter balanced_p = 0,
-  parameter lg_els_lp  = (els_p)
-) (
-  input  [els_p-1:0][

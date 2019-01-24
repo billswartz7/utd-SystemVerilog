@@ -1,8 +1,0 @@
-
-
-
-module bsg_rr_f2f_input #(parameter   width_p              = "inv"
-                          , parameter num_in_p             = 0
-                          , parameter middle_meet_p        = 0
-                          , parameter middle_meet_data_lp  = middle_meet_p * width_p
-                          , parameter min_in_middle_meet_p = (num_in_p,

@@ -1,9 +1,0 @@
- 
-
-module bsg_circular_ptr #(parameter slots_p     = -1
-                          , parameter max_add_p = -1
-                                                    , parameter ptr_width_lp = (slots_p)
-			  )
-   (input clk
-    , input reset_i
-    , input  [$clog2

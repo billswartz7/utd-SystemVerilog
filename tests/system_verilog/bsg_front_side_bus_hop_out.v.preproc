@@ -1,7 +1,0 @@
-
-module bsg_front_side_bus_hop_out #(parameter width_p="inv")
-  (input clk_i
-   , input  reset_i
-
-      
-   , input  [1:0]         v_i            , input  [1:0][

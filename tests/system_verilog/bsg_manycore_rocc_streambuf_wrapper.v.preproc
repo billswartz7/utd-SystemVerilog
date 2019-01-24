@@ -1,5 +1,0 @@
- 
- 
-
-module bsg_manycore_rocc_streambuf_wrapper
-   import

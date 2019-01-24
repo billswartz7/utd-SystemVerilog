@@ -1,5 +1,0 @@
- 
-
-module bsg_manycore_pkt_decode
-  #(
-    x_cord_width_p
