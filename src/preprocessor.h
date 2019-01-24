@@ -59,6 +59,7 @@ extern VERILOG_PREPROC_COND_CONTEXTPTR
 */
 typedef struct sverilog_parse_context_rec {
     BOOL emit ;           		//!< Only emit tokens iff true.
+    FILE *preproc_out ;			//!< Preprocessor output file
     UNSIGNED_INT token_count ;    	//!< Keeps count of tokens processed.
     BOOL in_cell_define ; 		//!< TRUE iff we are in a cell define.
     UTDDECKPTR file_stack ;		//!< Stack of files to process. 
@@ -70,17 +71,23 @@ typedef struct sverilog_parse_context_rec {
     SVERILOG_PRIMITIVE_STRENGTH_T unconnected_drive_pull; //!< nounconnectedrive
     char *scratch ;			//!< used internally
     UTDDECKPTR ifdefs ;         	//!< Storage for conditional compile stack.
+    int errors ;			//!< Errors encountered.
+    int *line_num ;			//!< low level line number variable 
+    char **scanner_text ;		//!< low level scanner text
 } SVERILOG_PARSE, *SVERILOG_PARSEPTR ;
 
 
 #define YY_DECL int sverilog_lex ( SVERILOG_PARSEPTR parse_p )
 extern int sverilog_lex ( SVERILOG_PARSEPTR parse_p ) ;
 extern void sverilog_error(SVERILOG_PARSEPTR parse_p,const char *msg) ;
+extern void verilog_preproc( SVERILOG_PARSEPTR parse_p, INT token, char *value ) ;
+extern void sverilog_lowlevel_init(SVERILOG_PARSEPTR parse_p) ;
+extern void verilog_flex_set_info( SVERILOG_PARSEPTR parse_p ) ;
 
-#define EMIT_TOKEN(info_xz,xz_z)   info_xz->token_count++ ;  \
-				   if( info_xz->emit) {      \
-				     return( xz_z ) ;        \
-				   }
+#define EMIT_TOKEN(parse_xz,xz_z,val_xz)   verilog_preproc(parse_xz,xz_z,val_xz);\
+					   if( parse_xz->emit ) {     \
+					     return( xz_z ) ;         \
+					   }
 
 // ----------------------- Include/File Directives ----------------------
 

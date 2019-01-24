@@ -29,6 +29,8 @@ SVERILOG_PARSEPTR sverilog_parser_init(void)
     // By default, search CWD for include files.
     UTDhash_insert( parse_p->search_dirs,"./", UTDstrclone("./") ) ;
 
+    sverilog_lowlevel_init(parse_p) ;
+
     return( parse_p ) ;
 } /* end sverilog_parser_init() ; */
 
@@ -65,6 +67,9 @@ int sverilog_parse_file( SVERILOG_PARSEPTR parse_p, char *filename )
       file_p->fp = UTDOPEN( file_p->filename,"r",FILE_NOABORT|FILE_VERBOSE ) ;
 
       if( file_p->fp ){
+	sverilog_set_in( file_p->fp ) ;
+	int status = ferror( file_p->fp ) ;
+	fprintf( stderr, "status:%d\n", status ) ;
 	new_buffer = sverilog__create_buffer( file_p->fp, YY_BUF_SIZE ) ;
 	sverilog__switch_to_buffer(new_buffer);
 	sverilog_lineno = 0 ; // Reset the global line counter, we are in a new file!
@@ -75,6 +80,38 @@ int sverilog_parse_file( SVERILOG_PARSEPTR parse_p, char *filename )
     return(0) ;
 } /* end sverilog_parse_file() */
 
+
+void sverilog_parser_set_preprocess_output( SVERILOG_PARSEPTR parse_p,
+                                            FILE *fout )
+{
+    parse_p->preproc_out = fout ;
+} /* end sverilog_parser_set_preprocess_output() */
+
+int sverilog_parser_get_errors( SVERILOG_PARSEPTR parse_p )
+{
+    return( parse_p->errors ) ;
+} /* end sverilog_parser_get_errors() */
+
+void verilog_preproc( SVERILOG_PARSEPTR parse_p, INT token, char *value )
+{
+    char *string_data ;			/* get low level string */
+
+    parse_p->token_count++ ; 
+    if( parse_p->emit ) {  
+      if( parse_p->preproc_out ){
+	if( value ){
+	  fprintf( parse_p->preproc_out, "%s", value ) ;
+	} else {
+	  if( parse_p->scanner_text ){
+	    string_data = *(parse_p->scanner_text) ;
+	    if( string_data ){
+	      fprintf( parse_p->preproc_out, "%s", string_data ) ;
+	    }
+	  }
+	}
+      }
+    }
+} /* end verilog_preproc() */
 
 /*! 
 @brief Handles the encounter of an include directive.
@@ -180,6 +217,7 @@ void verilog_preprocessor_macro_define(
 )
 {
 
+    int i ;				   // counter
     VERILOG_MACRO_DIRECTIVEPTR macro_p ;   // macro directive
 
     macro_p = UTDCALLOC( 1, VERILOG_MACRO_DIRECTIVE) ;
@@ -192,7 +230,8 @@ void verilog_preprocessor_macro_define(
     if( text_len > 0 ){
       // Make sure we exclude all comments from the macro text.
       macro_p->macro_value = UTDstrclone(macro_text) ;
-      for ( unsigned int i = 0 ; i < text_len-1 ; i++ ){
+      macro_p->macro_value[text_len] = 0 ;
+      for ( i = 0 ; i < text_len-1 ; i++ ){
 	if ( (macro_text[i] == '/') && (macro_text[i+1] == '/') ) {
 	  macro_p->macro_value[i] = EOS ; 
 	  break ;
@@ -232,7 +271,7 @@ void verilog_preprocessor_macro_undefine(
 	}
       }
     } else {
-      fprintf( stderr, "could not find macro %s in macro defined tables\n",
+      fprintf( stdout, "could not find macro %s in macro defined tables\n",
 	  macro_name ) ;
     } 
     return;
