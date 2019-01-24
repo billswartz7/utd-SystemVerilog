@@ -1,0 +1,17 @@
+
+module bsg_comm_link_fuser #
+  (parameter channel_width_p = "inv"
+  ,parameter core_channels_p = "inv"
+  ,parameter link_channels_p = "inv"
+  ,parameter sbox_pipeline_in_p  = "inv"
+  ,parameter sbox_pipeline_out_p = "inv"
+  ,parameter channel_mask_p = "inv"
+  ,parameter fuser_width_p = channel_width_p*core_channels_p)
+  (input clk_i
+  ,input reset_i
+
+    ,input                       core_calib_done_r_i
+  ,input [link_channels_p-1:0] core_active_channels_i
+
+    ,input  [link_channels_p-1:0] unfused_valid_i
+  ,input  [channel_width_p-1:0] unfused_data_i [

@@ -1,0 +1,5 @@
+
+
+module bsg_popcount #(parameter width_p="inv")
+   (input [width_p-1:0] i
+    , output [$clog2

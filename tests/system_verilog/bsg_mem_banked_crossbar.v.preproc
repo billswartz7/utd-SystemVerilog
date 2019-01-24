@@ -1,0 +1,17 @@
+
+
+
+
+
+
+module bsg_crossbar_control_o_by_i #( parameter i_els_p     = -1
+                                      ,parameter o_els_p     = -1
+                                                                                                                                                                                              ,parameter rr_lo_hi_p  = "inv"
+                                      ,parameter lg_o_els_lp = (o_els_p)
+                                      )
+  ( input                                clk_i
+   ,input                                reset_i
+
+      ,input                                reverse_pr_i
+      ,input [i_els_p-1:0]                  valid_i
+   ,input [i_els_p-1:0][

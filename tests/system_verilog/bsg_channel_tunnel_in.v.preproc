@@ -1,0 +1,10 @@
+
+
+module bsg_channel_tunnel_in #(parameter width_p = -1
+                               , num_in_p = "inv"
+                               , remote_credits_p = "inv"
+                               , use_pseudo_large_fifo_p = 0
+
+                                                                                             , lg_credit_decimation_p = 4
+
+                               , tag_width_lp           = $clog2

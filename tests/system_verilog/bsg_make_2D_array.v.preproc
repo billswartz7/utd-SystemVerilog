@@ -1,0 +1,5 @@
+module bsg_make_2D_array #(parameter width_p = -1,
+                           parameter items_p = -1)
+   (
+    input [width_p*items_p-1:0] i
+    , output [width_p-1:0] o [

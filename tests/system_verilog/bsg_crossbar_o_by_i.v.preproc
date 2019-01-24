@@ -1,0 +1,6 @@
+
+module bsg_crossbar_o_by_i #( parameter i_els_p = -1
+                             ,parameter o_els_p = -1
+                             ,parameter width_p = -1
+                            )
+  ( input  [i_els_p-1:0][

@@ -1,0 +1,4 @@
+
+module bsg_thermometer_count #(parameter width_p = -1)
+   (input [width_p-1:0] i
+            , output [$clog2

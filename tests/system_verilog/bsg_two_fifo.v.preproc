@@ -1,0 +1,16 @@
+
+module bsg_two_fifo #(parameter width_p="inv"
+                      , parameter verbose_p=0
+                                            , parameter allow_enq_deq_on_full_p=0
+                                                                  , parameter ready_THEN_valid_p=allow_enq_deq_on_full_p
+                      )
+   (input clk_i
+    , input reset_i
+
+        , output              ready_o     , input [width_p-1:0] data_i      , input               v_i     
+        , output              v_o         , output[width_p-1:0] data_o      , input               yumi_i      );
+
+   wire deq_i = yumi_i;
+   wire enq_i;
+
+   logic                  head_r,

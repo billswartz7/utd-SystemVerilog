@@ -1,0 +1,20 @@
+
+
+module bsg_source_sync_input #(parameter lg_fifo_depth_p=5
+                               , parameter lg_credit_to_token_decimation_p=3
+                               , parameter channel_width_p=8
+)
+   (
+        input                         io_clk_i          , input                        io_reset_i       , input                        io_token_bypass_i     , input  [channel_width_p-1:0] io_data_i        , input                        io_valid_i       , input  [1:0]                 io_edge_i    
+                                                                                                                                                                                                                                                    , output                       io_token_r_o 
+        , output [channel_width_p:0]   io_snoop_pos_r_o     
+        , output [channel_width_p:0]   io_snoop_neg_r_o     
+        , input                        io_trigger_mode_en_i          , input                        io_trigger_mode_alt_en_i  
+        , input                        core_clk_i
+    , input                        core_reset_i      , output [channel_width_p-1:0] core_data_o
+    , output                       core_valid_o
+    , input                        core_yumi_i                                                                                                     
+   );
+
+                           
+   logic [

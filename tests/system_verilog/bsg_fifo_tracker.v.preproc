@@ -1,0 +1,18 @@
+
+module bsg_fifo_tracker #(parameter els_p           = -1
+                          , ptr_width_lp = (els_p)
+                          )
+   (input   clk_i
+    , input reset_i
+
+    , input enq_i
+    , input deq_i
+
+    , output [ptr_width_lp-1:0] wptr_r_o
+    , output [ptr_width_lp-1:0] rptr_r_o
+
+    , output full_o
+    , output empty_o
+    );
+
+      logic [

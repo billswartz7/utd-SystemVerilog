@@ -1,0 +1,14 @@
+
+
+
+
+module bsg_scatter_gather #(parameter vec_size_lp="inv")
+       (input [vec_size_lp-1:0] vec_i
+       ,output reg [vec_size_lp*(vec_size_lp)-1:0] fwd_o
+       ,output reg [vec_size_lp*(vec_size_lp)-1:0] fwd_datapath_o
+       ,output reg [vec_size_lp*(vec_size_lp)-1:0] bk_o
+       ,output reg [vec_size_lp*(vec_size_lp)-1:0] bk_datapath_o       
+       );
+
+
+if

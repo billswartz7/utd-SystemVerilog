@@ -1,0 +1,15 @@
+
+module bsg_relay_fifo #(parameter width_p="inv")
+    ( input clk_i
+    , input reset_i
+
+        , output              ready_o 
+    , input [width_p-1:0] data_i 
+    , input               v_i     
+
+        , output              v_o   
+    , output[width_p-1:0] data_o
+    , input               ready_i 
+    );
+
+logic yumi;

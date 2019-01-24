@@ -1,0 +1,13 @@
+
+module bsg_counter_clear_up #(parameter max_val_p     = -1
+                             ,parameter init_val_p   = -1
+                             ,parameter ptr_width_lp =
+                             (max_val_p+1)
+                             )
+   (input  clk_i
+    , input reset_i
+
+    , input clear_i
+    , input up_i
+
+    , output logic [

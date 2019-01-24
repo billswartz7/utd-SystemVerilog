@@ -1,0 +1,14 @@
+
+module bsg_idiv_iterative_controller (
+	   input               clk_i
+	  ,input               reset_i
+
+	  ,input               v_i
+      ,output              ready_o
+
+	  ,input               signed_div_r_i
+	  ,input               adder_result_is_neg_i
+	  ,input               opA_is_neg_i
+	  ,input               opC_is_neg_i
+
+      ,output logic        opA_sel_o

@@ -1,0 +1,10 @@
+
+module bsg_round_robin_n_to_1 #(parameter width_p = -1
+                                ,parameter num_in_p = -1
+                                ,parameter strict_p = "inv" 
+                                ,parameter tag_width_lp = (num_in_p)
+                                )
+   (input  clk_i
+    , input  reset_i
+
+        , input  [num_in_p-1:0][

@@ -1,0 +1,7 @@
+instname=tsmc16_1rw_lg10_w32_all
+check_instname=off
+words=1024
+bits=32
+mux=4
+flexible_banking=4
+corners = ffg_0p88v_0p88v_125c,ffgnp_0p88v_0p88v_0c,ffgnp_0p88v_0p88v_125c,ffgnp_0p88v_0p88v_m40c,ssgnp_0p72v_0p72v_0c,ssgnp_0p72v_0p72v_125c,ssgnp_0p72v_0p72v_m40c,tt_0p72v_0p72v_0c,tt_0p80v_0p80v_25c,tt_0p80v_0p80v_85c

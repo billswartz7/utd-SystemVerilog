@@ -1,0 +1,16 @@
+module bsg_counter_up_down_variable #( parameter max_val_p    = -1
+                                     , parameter init_val_p   = -1
+                                     , parameter max_step_p   = -1
+
+                                                                          , parameter step_width_lp = 
+                                        (max_step_p)
+                                     , parameter ptr_width_lp = 
+                                        (max_val_p)
+                                     )                           
+    ( input                            clk_i
+    , input                            reset_i
+
+    , input        [step_width_lp-1:0] up_i
+    , input        [step_width_lp-1:0] down_i
+
+    , output logic [

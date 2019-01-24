@@ -1,0 +1,8 @@
+
+
+module bsg_encode_one_hot #(parameter width_p=8, parameter lo_to_hi_p=1)
+   (input    [width_p-1:0]         i
+    , output [(width_p)-1:0] addr_o      , output v_o                               );
+
+   localparam half_width_lp    = width_p >> 1;
+   localparam aligned_width_lp = 1 << $clog2

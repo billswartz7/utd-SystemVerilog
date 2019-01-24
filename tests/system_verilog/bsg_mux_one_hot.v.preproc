@@ -1,0 +1,7 @@
+
+module bsg_mux_one_hot #(parameter width_p="inv"
+                         , els_p=1
+			 , harden_p=1
+                         )
+   (
+    input [els_p-1:0][

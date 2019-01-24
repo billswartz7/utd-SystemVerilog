@@ -1,0 +1,13 @@
+ 
+
+module  bsg_manycore_link_to_fifo
+  #(  parameter addr_width_p="inv"
+    , parameter data_width_p="inv"
+    , parameter x_cord_width_p="inv"
+    , parameter y_cord_width_p="inv"
+
+        , parameter out_fifo_width_scale_p  = 2
+        , parameter in_channel_scale_p      = 2
+    , parameter fifo_els_p              = 4
+
+    , parameter bsg_manycore_link_sif_width_lp=(addr_width_p,

@@ -1,0 +1,5 @@
+ 
+
+module bsg_manycore_accel_default #(
+                                                                                                            
+                                    hetero_type_p

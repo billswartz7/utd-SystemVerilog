@@ -1,0 +1,11 @@
+
+
+module bsg_async_ptr_gray #(parameter lg_size_p = -1
+                            ,parameter use_negedge_for_launch_p=0)
+   (
+    input w_clk_i
+    , input w_reset_i
+    , input w_inc_i                   , input r_clk_i
+    , output [lg_size_p-1:0] w_ptr_binary_r_o         , output [lg_size_p-1:0] w_ptr_gray_r_o           , output [lg_size_p-1:0] w_ptr_gray_r_rsync_o     );
+
+   logic [
