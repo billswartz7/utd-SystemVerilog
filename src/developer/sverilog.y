@@ -8,12 +8,20 @@
     #include <verilog/sverilog.h>
     #include <preprocessor.h>
 
-    // extern int open_veriloglineno;
-    // extern char * open_verilogtext;
+    extern int sverilog_lineno ;
+    extern char *sverilog_text ;
 
     void sverilog_error(SVERILOG_PARSEPTR parse_p,const char *msg) {
-        //printf("line %d - ERROR: %s\n", open_veriloglineno,msg);
-        //printf("- '%s'\n", open_verilogtext);
+        fprintf( stderr, "line %d - ERROR: %s\n", sverilog_lineno,msg) ;
+        fprintf( stderr, "- '%s'\n", sverilog_text) ;
+    }
+
+    /* Used to decouple lex/flex yacc/bison from the preprocessor */
+    void sverilog_lowlevel_init(SVERILOG_PARSEPTR parse_p) {
+	// We add level of indirection but now we are decoupled
+	// and out of the address space.
+        parse_p->line_num = &sverilog_lineno ; 
+	parse_p->scanner_text = &sverilog_text ;
     }
 %}
 
