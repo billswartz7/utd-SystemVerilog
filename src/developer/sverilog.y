@@ -70,12 +70,6 @@
 %token <string> NUM_SIZE
 %token <string> UNSIGNED_NUMBER
 
-%type  <number> decimal_number
-%type  <number> binary_number
-%type  <number> hex_number
-%type  <number> octal_number
-%type  <number> real_number
-
 %token <identifier> SYSTEM_ID
 %token <identifier> SIMPLE_ID
 %token <identifier> ESCAPED_ID
@@ -2183,6 +2177,7 @@ attr_name 	: identifier
 
 /* A.9.2 Comments */
 
+/* These are supported in the LEX
 comment		: one_line_comment
 		| block_comment
 		;
@@ -2191,6 +2186,8 @@ one_line_comment: COMMENT_LINE
 		;
 
 block_comment	: COMMENT_BLOCK
+
+*/
 		;
 
 /* A.9.3 Identifiers */
@@ -2368,9 +2365,11 @@ escaped_hierarchical_branch : escaped_hierarchical_branch DOT escaped_identifier
 		| escaped_identifier OPEN_SQ_BRACKET range_expression CLOSE_SQ_BRACKET
 		;
 
+/* This is handled in the LEX
 white_space 	: SPACE 
 	     	| TAB 
 		| NEWLINE
 		;
+*/
 
 %%
