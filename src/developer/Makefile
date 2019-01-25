@@ -1,7 +1,7 @@
 LEX=flex -v -d -P sverilog_ -o lex.yy.c
 LEX=flex -v -P sverilog_ -o lex.yy.c
-YACC=byacc -b sverilog
 YACC=bison -p sverilog_
+YACC=byacc -b sverilog -p sverilog_
 RM=rm -f
 MV=mv
 GREP=grep
