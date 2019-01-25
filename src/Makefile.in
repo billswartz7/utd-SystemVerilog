@@ -344,8 +344,12 @@ libopen_sverilog_la_SOURCES = \
 	sverilog_parser.c \
 	sverilog_scanner.c
 
-PUBLIC_HDRS = \
+PRIVATE_HDRS = \
 	preprocessor.h
+
+PUBLIC_HDRS = \
+	parse.h \
+	sverilog.h
 
 libopen_sverilog_la_LDFLAGS = -version-info 1:0:0
 AM_LDFLAGS = -lm

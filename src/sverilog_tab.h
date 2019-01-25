@@ -1,270 +1,203 @@
-/* A Bison parser, made by GNU Bison 3.0.5.  */
-
-/* Bison interface for Yacc-like parsers in C
-
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018 Free Software Foundation, Inc.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
-
-/* As a special exception, you may create a larger work that contains
-   part or all of the Bison parser skeleton and distribute that work
-   under terms of your choice, so long as that work isn't itself a
-   parser generator using the skeleton or a modified version thereof
-   as a parser skeleton.  Alternatively, if you modify or redistribute
-   the parser skeleton itself, you may (at your option) remove this
-   special exception, which will cause the skeleton and the resulting
-   Bison output files to be licensed under the GNU General Public
-   License without this special exception.
-
-   This special exception was added by the Free Software Foundation in
-   version 2.2 of Bison.  */
-
-#ifndef YY_SVERILOG_SVERILOG_TAB_H_INCLUDED
-# define YY_SVERILOG_SVERILOG_TAB_H_INCLUDED
-/* Debug traces.  */
-#ifndef YYDEBUG
-# define YYDEBUG 0
-#endif
-#if YYDEBUG
-extern int sverilog_debug;
-#endif
-
-/* Token type.  */
-#ifndef YYTOKENTYPE
-# define YYTOKENTYPE
-  enum yytokentype
-  {
-    ANY = 258,
-    END = 259,
-    NEWLINE = 260,
-    SPACE = 261,
-    TAB = 262,
-    AT = 263,
-    COMMA = 264,
-    HASH = 265,
-    DOT = 266,
-    EQ = 267,
-    COLON = 268,
-    IDX_PRT_SEL = 269,
-    SEMICOLON = 270,
-    OPEN_BRACKET = 271,
-    CLOSE_BRACKET = 272,
-    OPEN_SQ_BRACKET = 273,
-    CLOSE_SQ_BRACKET = 274,
-    OPEN_SQ_BRACE = 275,
-    CLOSE_SQ_BRACE = 276,
-    BIN_VALUE = 277,
-    OCT_VALUE = 278,
-    HEX_VALUE = 279,
-    DEC_BASE = 280,
-    BIN_BASE = 281,
-    OCT_BASE = 282,
-    HEX_BASE = 283,
-    NUM_REAL = 284,
-    NUM_SIZE = 285,
-    UNSIGNED_NUMBER = 286,
-    SYSTEM_ID = 287,
-    SIMPLE_ID = 288,
-    ESCAPED_ID = 289,
-    DEFINE_ID = 290,
-    ATTRIBUTE_START = 291,
-    ATTRIBUTE_END = 292,
-    COMMENT_LINE = 293,
-    COMMENT_BLOCK = 294,
-    STRING = 295,
-    STAR = 296,
-    PLUS = 297,
-    MINUS = 298,
-    ASL = 299,
-    ASR = 300,
-    LSL = 301,
-    LSR = 302,
-    DIV = 303,
-    POW = 304,
-    MOD = 305,
-    GTE = 306,
-    LTE = 307,
-    GT = 308,
-    LT = 309,
-    L_NEG = 310,
-    L_AND = 311,
-    L_OR = 312,
-    C_EQ = 313,
-    L_EQ = 314,
-    C_NEQ = 315,
-    L_NEQ = 316,
-    B_NEG = 317,
-    B_AND = 318,
-    B_OR = 319,
-    B_XOR = 320,
-    B_EQU = 321,
-    B_NAND = 322,
-    B_NOR = 323,
-    TERNARY = 324,
-    UNARY_OP = 325,
-    MACRO_TEXT = 326,
-    MACRO_IDENTIFIER = 327,
-    KW_ALWAYS = 328,
-    KW_AND = 329,
-    KW_ASSIGN = 330,
-    KW_AUTOMATIC = 331,
-    KW_BEGIN = 332,
-    KW_BUF = 333,
-    KW_BUFIF0 = 334,
-    KW_BUFIF1 = 335,
-    KW_CASE = 336,
-    KW_CASEX = 337,
-    KW_CASEZ = 338,
-    KW_CELL = 339,
-    KW_CMOS = 340,
-    KW_CONFIG = 341,
-    KW_DEASSIGN = 342,
-    KW_DEFAULT = 343,
-    KW_DEFPARAM = 344,
-    KW_DESIGN = 345,
-    KW_DISABLE = 346,
-    KW_EDGE = 347,
-    KW_ELSE = 348,
-    KW_END = 349,
-    KW_ENDCASE = 350,
-    KW_ENDCONFIG = 351,
-    KW_ENDFUNCTION = 352,
-    KW_ENDGENERATE = 353,
-    KW_ENDMODULE = 354,
-    KW_ENDPRIMITIVE = 355,
-    KW_ENDSPECIFY = 356,
-    KW_ENDTABLE = 357,
-    KW_ENDTASK = 358,
-    KW_EVENT = 359,
-    KW_FOR = 360,
-    KW_FORCE = 361,
-    KW_FOREVER = 362,
-    KW_FORK = 363,
-    KW_FUNCTION = 364,
-    KW_GENERATE = 365,
-    KW_GENVAR = 366,
-    KW_HIGHZ0 = 367,
-    KW_HIGHZ1 = 368,
-    KW_IF = 369,
-    KW_IFNONE = 370,
-    KW_INCDIR = 371,
-    KW_INCLUDE = 372,
-    KW_INITIAL = 373,
-    KW_INOUT = 374,
-    KW_INPUT = 375,
-    KW_INSTANCE = 376,
-    KW_INTEGER = 377,
-    KW_JOIN = 378,
-    KW_LARGE = 379,
-    KW_LIBLIST = 380,
-    KW_LIBRARY = 381,
-    KW_LOCALPARAM = 382,
-    KW_MACROMODULE = 383,
-    KW_MEDIUM = 384,
-    KW_MODULE = 385,
-    KW_NAND = 386,
-    KW_NEGEDGE = 387,
-    KW_NMOS = 388,
-    KW_NOR = 389,
-    KW_NOSHOWCANCELLED = 390,
-    KW_NOT = 391,
-    KW_NOTIF0 = 392,
-    KW_NOTIF1 = 393,
-    KW_OR = 394,
-    KW_OUTPUT = 395,
-    KW_PARAMETER = 396,
-    KW_PATHPULSE = 397,
-    KW_PMOS = 398,
-    KW_POSEDGE = 399,
-    KW_PRIMITIVE = 400,
-    KW_PULL0 = 401,
-    KW_PULL1 = 402,
-    KW_PULLDOWN = 403,
-    KW_PULLUP = 404,
-    KW_PULSESTYLE_ONEVENT = 405,
-    KW_PULSESTYLE_ONDETECT = 406,
-    KW_RCMOS = 407,
-    KW_REAL = 408,
-    KW_REALTIME = 409,
-    KW_REG = 410,
-    KW_RELEASE = 411,
-    KW_REPEAT = 412,
-    KW_RNMOS = 413,
-    KW_RPMOS = 414,
-    KW_RTRAN = 415,
-    KW_RTRANIF0 = 416,
-    KW_RTRANIF1 = 417,
-    KW_SCALARED = 418,
-    KW_SHOWCANCELLED = 419,
-    KW_SIGNED = 420,
-    KW_SMALL = 421,
-    KW_SPECIFY = 422,
-    KW_SPECPARAM = 423,
-    KW_STRONG0 = 424,
-    KW_STRONG1 = 425,
-    KW_SUPPLY0 = 426,
-    KW_SUPPLY1 = 427,
-    KW_TABLE = 428,
-    KW_TASK = 429,
-    KW_TIME = 430,
-    KW_TRAN = 431,
-    KW_TRANIF0 = 432,
-    KW_TRANIF1 = 433,
-    KW_TRI = 434,
-    KW_TRI0 = 435,
-    KW_TRI1 = 436,
-    KW_TRIAND = 437,
-    KW_TRIOR = 438,
-    KW_TRIREG = 439,
-    KW_UNSIGNED = 440,
-    KW_USE = 441,
-    KW_VECTORED = 442,
-    KW_WAIT = 443,
-    KW_WAND = 444,
-    KW_WEAK0 = 445,
-    KW_WEAK1 = 446,
-    KW_WHILE = 447,
-    KW_WIRE = 448,
-    KW_WOR = 449,
-    KW_XNOR = 450,
-    KW_XOR = 451
-  };
-#endif
-
-/* Value type.  */
-#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-
-union YYSTYPE
-{
-
+#define ANY 257
+#define END 258
+#define NEWLINE 259
+#define SPACE 260
+#define TAB 261
+#define AT 262
+#define COMMA 263
+#define HASH 264
+#define DOT 265
+#define EQ 266
+#define COLON 267
+#define IDX_PRT_SEL 268
+#define SEMICOLON 269
+#define OPEN_BRACKET 270
+#define CLOSE_BRACKET 271
+#define OPEN_SQ_BRACKET 272
+#define CLOSE_SQ_BRACKET 273
+#define OPEN_SQ_BRACE 274
+#define CLOSE_SQ_BRACE 275
+#define BIN_VALUE 276
+#define OCT_VALUE 277
+#define HEX_VALUE 278
+#define DEC_BASE 279
+#define BIN_BASE 280
+#define OCT_BASE 281
+#define HEX_BASE 282
+#define NUM_REAL 283
+#define NUM_SIZE 284
+#define UNSIGNED_NUMBER 285
+#define SYSTEM_ID 286
+#define SIMPLE_ID 287
+#define ESCAPED_ID 288
+#define DEFINE_ID 289
+#define ATTRIBUTE_START 290
+#define ATTRIBUTE_END 291
+#define COMMENT_LINE 292
+#define COMMENT_BLOCK 293
+#define STRING 294
+#define STAR 295
+#define PLUS 296
+#define MINUS 297
+#define ASL 298
+#define ASR 299
+#define LSL 300
+#define LSR 301
+#define DIV 302
+#define POW 303
+#define MOD 304
+#define GTE 305
+#define LTE 306
+#define GT 307
+#define LT 308
+#define L_NEG 309
+#define L_AND 310
+#define L_OR 311
+#define C_EQ 312
+#define L_EQ 313
+#define C_NEQ 314
+#define L_NEQ 315
+#define B_NEG 316
+#define B_AND 317
+#define B_OR 318
+#define B_XOR 319
+#define B_EQU 320
+#define B_NAND 321
+#define B_NOR 322
+#define TERNARY 323
+#define UNARY_OP 324
+#define MACRO_TEXT 325
+#define MACRO_IDENTIFIER 326
+#define KW_ALWAYS 327
+#define KW_AND 328
+#define KW_ASSIGN 329
+#define KW_AUTOMATIC 330
+#define KW_BEGIN 331
+#define KW_BUF 332
+#define KW_BUFIF0 333
+#define KW_BUFIF1 334
+#define KW_CASE 335
+#define KW_CASEX 336
+#define KW_CASEZ 337
+#define KW_CELL 338
+#define KW_CMOS 339
+#define KW_CONFIG 340
+#define KW_DEASSIGN 341
+#define KW_DEFAULT 342
+#define KW_DEFPARAM 343
+#define KW_DESIGN 344
+#define KW_DISABLE 345
+#define KW_EDGE 346
+#define KW_ELSE 347
+#define KW_END 348
+#define KW_ENDCASE 349
+#define KW_ENDCONFIG 350
+#define KW_ENDFUNCTION 351
+#define KW_ENDGENERATE 352
+#define KW_ENDMODULE 353
+#define KW_ENDPRIMITIVE 354
+#define KW_ENDSPECIFY 355
+#define KW_ENDTABLE 356
+#define KW_ENDTASK 357
+#define KW_EVENT 358
+#define KW_FOR 359
+#define KW_FORCE 360
+#define KW_FOREVER 361
+#define KW_FORK 362
+#define KW_FUNCTION 363
+#define KW_GENERATE 364
+#define KW_GENVAR 365
+#define KW_HIGHZ0 366
+#define KW_HIGHZ1 367
+#define KW_IF 368
+#define KW_IFNONE 369
+#define KW_INCDIR 370
+#define KW_INCLUDE 371
+#define KW_INITIAL 372
+#define KW_INOUT 373
+#define KW_INPUT 374
+#define KW_INSTANCE 375
+#define KW_INTEGER 376
+#define KW_JOIN 377
+#define KW_LARGE 378
+#define KW_LIBLIST 379
+#define KW_LIBRARY 380
+#define KW_LOCALPARAM 381
+#define KW_MACROMODULE 382
+#define KW_MEDIUM 383
+#define KW_MODULE 384
+#define KW_NAND 385
+#define KW_NEGEDGE 386
+#define KW_NMOS 387
+#define KW_NOR 388
+#define KW_NOSHOWCANCELLED 389
+#define KW_NOT 390
+#define KW_NOTIF0 391
+#define KW_NOTIF1 392
+#define KW_OR 393
+#define KW_OUTPUT 394
+#define KW_PARAMETER 395
+#define KW_PATHPULSE 396
+#define KW_PMOS 397
+#define KW_POSEDGE 398
+#define KW_PRIMITIVE 399
+#define KW_PULL0 400
+#define KW_PULL1 401
+#define KW_PULLDOWN 402
+#define KW_PULLUP 403
+#define KW_PULSESTYLE_ONEVENT 404
+#define KW_PULSESTYLE_ONDETECT 405
+#define KW_RCMOS 406
+#define KW_REAL 407
+#define KW_REALTIME 408
+#define KW_REG 409
+#define KW_RELEASE 410
+#define KW_REPEAT 411
+#define KW_RNMOS 412
+#define KW_RPMOS 413
+#define KW_RTRAN 414
+#define KW_RTRANIF0 415
+#define KW_RTRANIF1 416
+#define KW_SCALARED 417
+#define KW_SHOWCANCELLED 418
+#define KW_SIGNED 419
+#define KW_SMALL 420
+#define KW_SPECIFY 421
+#define KW_SPECPARAM 422
+#define KW_STRONG0 423
+#define KW_STRONG1 424
+#define KW_SUPPLY0 425
+#define KW_SUPPLY1 426
+#define KW_TABLE 427
+#define KW_TASK 428
+#define KW_TIME 429
+#define KW_TRAN 430
+#define KW_TRANIF0 431
+#define KW_TRANIF1 432
+#define KW_TRI 433
+#define KW_TRI0 434
+#define KW_TRI1 435
+#define KW_TRIAND 436
+#define KW_TRIOR 437
+#define KW_TRIREG 438
+#define KW_UNSIGNED 439
+#define KW_USE 440
+#define KW_VECTORED 441
+#define KW_WAIT 442
+#define KW_WAND 443
+#define KW_WEAK0 444
+#define KW_WEAK1 445
+#define KW_WHILE 446
+#define KW_WIRE 447
+#define KW_WOR 448
+#define KW_XNOR 449
+#define KW_XOR 450
+typedef union {
     char        		boolean ;
     char        		*string ;
     char        		*term ;
     char        		*keyword ;
     char        		*identifier ;
     SVERILOG_OPERATOR_T 	operator ;
-
-};
-
-typedef union YYSTYPE YYSTYPE;
-# define YYSTYPE_IS_TRIVIAL 1
-# define YYSTYPE_IS_DECLARED 1
-#endif
-
-
+} YYSTYPE;
 extern YYSTYPE sverilog_lval;
-
-int sverilog_parse (SVERILOG_PARSEPTR parse_p);
-
-#endif /* !YY_SVERILOG_SVERILOG_TAB_H_INCLUDED  */
