@@ -11,10 +11,16 @@
 #ifndef VERILOG_PREPROCESSOR_H
 #define VERILOG_PREPROCESSOR_H
 
-#include <utd/config.h>
+#include <sverilog_config.h>
 #include <utd/base.h>
 #include <utd/deck.h>
 #include <utd/hash.h>
+
+#ifdef DEBUG
+#define YYDEBUG 1
+#endif /* DEBUG */
+
+#define LAST_FILE_LEN	80
 
 // ----------------------- Timescale Directives -------------------------
 
@@ -59,6 +65,8 @@ extern VERILOG_PREPROC_COND_CONTEXTPTR
 */
 typedef struct sverilog_parse_context_rec {
     BOOL emit ;           		//!< Only emit tokens iff true.
+    BOOL allow_sv_keys ;       		//!< Allow system verilog keywords
+    BOOL check_for_expression ; 	//!< Check for complex expression
     FILE *preproc_out ;			//!< Preprocessor output file
     UNSIGNED_INT token_count ;    	//!< Keeps count of tokens processed.
     BOOL in_cell_define ; 		//!< TRUE iff we are in a cell define.
@@ -74,6 +82,8 @@ typedef struct sverilog_parse_context_rec {
     int errors ;			//!< Errors encountered.
     int *line_num ;			//!< low level line number variable 
     char **scanner_text ;		//!< low level scanner text
+    char *file_name ;			//!< current open filename
+    char last_file_name[LAST_FILE_LEN] ;//! < remember last file name */	
 } SVERILOG_PARSE, *SVERILOG_PARSEPTR ;
 
 
@@ -87,6 +97,15 @@ extern void verilog_flex_set_info( SVERILOG_PARSEPTR parse_p ) ;
 #define EMIT_TOKEN(parse_xz,xz_z,val_xz)   verilog_preproc(parse_xz,xz_z,val_xz);\
 					   if( parse_xz->emit ) {     \
 					     return( xz_z ) ;         \
+					   }
+
+// For now - eventually we want to turn this off restriction these
+// keywords when in verilog mode.
+#define EMIT_SVTOKEN(parse_xz,xz_z,val_xz) verilog_preproc(parse_xz,xz_z,val_xz);\
+					   if( parse_xz->emit && parse_xz->allow_sv_keys ) { \
+					     return( xz_z ) ;         \
+					   } else if( parse_xz->emit ){ \
+					     REJECT ; \
 					   }
 
 // ----------------------- Include/File Directives ----------------------
@@ -246,6 +265,9 @@ extern void verilog_preproc_default_net (
 extern char *sverilog_new_identifier( SVERILOG_PARSEPTR parse_p,
                                       char *string, unsigned int line_no) ; 
 
+extern void sverilog_expect_expression( SVERILOG_PARSEPTR parse_p, 
+                                        BOOL state ) ;
+
 /*!
 @brief Cleanup file stack as we are done with the current file.
 */
@@ -257,7 +279,19 @@ extern void verilog_pop_file_stack( SVERILOG_PARSEPTR parse_p ) ;
 */
 extern int sverilog_parse( SVERILOG_PARSEPTR parse_p ) ;
 
-extern int sverilog_lineno ;
+/* -----------------------------------------------------------------
+ * First the start of flex line.
+ * ----------------------------------------------------------------- */
+extern const char *sverilog_line_start( const char *string ) ;
+extern int sverilog_show_position( const char *start, const char *msg ) ;
+
+/* -----------------------------------------------------------------
+ * These are created by flex
+ * ----------------------------------------------------------------- */
+extern FILE *sverilog_get_in (void ) ;
+extern void sverilog_set_in  (FILE * in_str  ) ;
+extern FILE *sverilog_get_out (void ) ;
+extern void sverilog_set_out  (FILE * out_str  ) ;
 
 
 #ifdef LATER
@@ -333,7 +367,6 @@ extern char * verilog_preprocessor_current_file(
 extern void verilog_free_preprocessor_context(
     verilog_preprocessor_context * tofree
 );
-
 
 
 

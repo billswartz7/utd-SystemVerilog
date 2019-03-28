@@ -1,5 +1,8 @@
 %parse-param {SVERILOG_PARSEPTR parse_p}
 %lex-param {SVERILOG_PARSEPTR parse_p}
+%glr-parser     
+%expect 5
+%expect-rr 0
 
 %{
     #include <stdio.h>
@@ -8,12 +11,30 @@
     #include <verilog/sverilog.h>
     #include <preprocessor.h>
 
+
+    /* These are definitions from the scanner */
     extern int sverilog_lineno ;
     extern char *sverilog_text ;
 
     void sverilog_error(SVERILOG_PARSEPTR parse_p,const char *msg) {
-        fprintf( stderr, "line %d - ERROR: %s\n", sverilog_lineno,msg) ;
-        fprintf( stderr, "- '%s'\n", sverilog_text) ;
+	const char *err_msg = *(parse_p->scanner_text) ;
+	const char *file_name = parse_p->file_name ;
+	int line_num = *(parse_p->line_num) ;
+	if(!(file_name)){
+	  if( parse_p->last_file_name[0] ){
+	    file_name = parse_p->last_file_name ;
+	  } else {
+	    file_name = "unknown (probably stdin)" ;
+	  }
+	}
+        fprintf( stderr, "ERROR:problem reading %s: line %d near '%s'\n", 
+		 file_name, line_num, err_msg ) ;
+        fprintf( stderr, "%s\n", msg) ;
+        fprintf( stderr, "Offending line:" ) ;
+	const char *line_start = sverilog_line_start( sverilog_text ) ;
+        fprintf( stderr, "%s\n", line_start ) ;
+	int line_position = sverilog_show_position( line_start, err_msg ) ;
+        fprintf( stderr, " %*s\n\n", line_position+15, "^" ) ;
     }
 
     /* Used to decouple lex/flex yacc/bison from the preprocessor */
@@ -50,12 +71,12 @@
 %token <string> COLON              
 %token <string> IDX_PRT_SEL
 %token <string> SEMICOLON          
-%token <string> OPEN_BRACKET       
-%token <string> CLOSE_BRACKET      
+%token <string> OPEN_PAREN       
+%token <string> CLOSE_PAREN      
 %token <string> OPEN_SQ_BRACKET    
 %token <string> CLOSE_SQ_BRACKET   
-%token <string> OPEN_SQ_BRACE      
-%token <string> CLOSE_SQ_BRACE     
+%token <string> OPEN_CURLBRACE      
+%token <string> CLOSE_CURLBRACE     
 
 %token <string> BIN_VALUE
 %token <string> OCT_VALUE
@@ -81,7 +102,7 @@
 %token <string> COMMENT_LINE
 %token <string> COMMENT_BLOCK
 
-%token <string> STRING
+%token <string> QSTRING
 
 /* Operators Precedence */
 
@@ -120,7 +141,7 @@
 /* Operator Precedence */
 
 
-%right  TERNARY                 /* Lowest Precedence */
+%right  TERNARY COLON                 /* Lowest Precedence */
 %left   L_OR
 %left   L_AND
 %left   B_OR B_NOR
@@ -143,11 +164,14 @@
 %token <keyword> KW_ALWAYS
 %token <keyword> KW_AND
 %token <keyword> KW_ASSIGN
+%token <keyword> KW_ASTERISK
 %token <keyword> KW_AUTOMATIC
 %token <keyword> KW_BEGIN
+%token <keyword> KW_BIT
 %token <keyword> KW_BUF
 %token <keyword> KW_BUFIF0
 %token <keyword> KW_BUFIF1
+%token <keyword> KW_BYTE
 %token <keyword> KW_CASE
 %token <keyword> KW_CASEX
 %token <keyword> KW_CASEZ
@@ -159,6 +183,7 @@
 %token <keyword> KW_DEFPARAM
 %token <keyword> KW_DESIGN
 %token <keyword> KW_DISABLE
+%token <keyword> KW_DOLLAR_SIGN
 %token <keyword> KW_EDGE
 %token <keyword> KW_ELSE
 %token <keyword> KW_END
@@ -188,6 +213,7 @@
 %token <keyword> KW_INITIAL
 %token <keyword> KW_INOUT
 %token <keyword> KW_INPUT
+%token <keyword> KW_INT
 %token <keyword> KW_INSTANCE
 %token <keyword> KW_INTEGER
 %token <keyword> KW_JOIN
@@ -195,6 +221,8 @@
 %token <keyword> KW_LIBLIST
 %token <keyword> KW_LIBRARY
 %token <keyword> KW_LOCALPARAM
+%token <keyword> KW_LOGIC
+%token <keyword> KW_LONGINT
 %token <keyword> KW_MACROMODULE
 %token <keyword> KW_MEDIUM
 %token <keyword> KW_MODULE
@@ -206,6 +234,7 @@
 %token <keyword> KW_NOT
 %token <keyword> KW_NOTIF0
 %token <keyword> KW_NOTIF1
+%token <keyword> KW_NULL
 %token <keyword> KW_OR
 %token <keyword> KW_OUTPUT
 %token <keyword> KW_PARAMETER
@@ -226,11 +255,13 @@
 %token <keyword> KW_RELEASE
 %token <keyword> KW_REPEAT
 %token <keyword> KW_RNMOS
+%token <keyword> KW_ROOT
 %token <keyword> KW_RPMOS
 %token <keyword> KW_RTRAN
 %token <keyword> KW_RTRANIF0
 %token <keyword> KW_RTRANIF1
 %token <keyword> KW_SCALARED
+%token <keyword> KW_SHORTINT
 %token <keyword> KW_SHOWCANCELLED
 %token <keyword> KW_SIGNED
 %token <keyword> KW_SMALL
@@ -238,11 +269,15 @@
 %token <keyword> KW_SPECPARAM
 %token <keyword> KW_STRONG0
 %token <keyword> KW_STRONG1
+%token <keyword> KW_SUPER
 %token <keyword> KW_SUPPLY0
 %token <keyword> KW_SUPPLY1
 %token <keyword> KW_TABLE
 %token <keyword> KW_TASK
+%token <keyword> KW_THIS
 %token <keyword> KW_TIME
+%token <keyword> KW_TIMEPRECISION
+%token <keyword> KW_TIMEUNIT
 %token <keyword> KW_TRAN
 %token <keyword> KW_TRANIF0
 %token <keyword> KW_TRANIF1
@@ -254,6 +289,7 @@
 %token <keyword> KW_TRIREG
 %token <keyword> KW_UNSIGNED
 %token <keyword> KW_USE
+%token <keyword> KW_UWIRE
 %token <keyword> KW_VECTORED
 %token <keyword> KW_WAIT
 %token <keyword> KW_WAND
@@ -265,419 +301,614 @@
 %token <keyword> KW_XNOR
 %token <keyword> KW_XOR
 
+%token <keyword> KW_REF
+%token <keyword> KW_STATIC
+%token <keyword> KW_TIMEUNITS
+%token <keyword> KW_STEP
+%token <keyword> KW_UNIT
+%token <keyword> SVID
+
 %start grammar_begin
 
 
 %%
 /* Start variables */
 
-grammar_begin 	: library_text 
-		| config_declaration
+grammar_begin 	: /* FIXME library_text  */
+#		| config_declaration
 		| source_text 
-		| /* empty */ 
-		;
+#		| /* empty */ 
+#		;
 
 /* 19.0 Compiler Directives */
 
+#/* FIXME
+#text_macro_usage : MACRO_IDENTIFIER list_of_actual_arguments
+#                 | MACRO_IDENTIFIER 
+#		 ;
 
-text_macro_usage : MACRO_IDENTIFIER list_of_actual_arguments
-                 | MACRO_IDENTIFIER 
-		 ;
+#list_of_actual_arguments : actual_argument
+#		| list_of_actual_arguments COMMA actual_argument 
+#		;
 
-list_of_actual_arguments : actual_argument
-		| list_of_actual_arguments COMMA actual_argument 
-		;
+#actual_argument : expression 
+#		; 
 
-actual_argument : expression 
-		; 
+#*/
 
+#/* A.1.1 Library Source Text */
 
-/* A.1.1 Library Source Text */
+#/* FIXME
+#library_text 	: library_descriptions
+#		| library_text library_descriptions 
+#		;
 
-library_text 	: library_descriptions
-		| library_text library_descriptions 
-		;
+#library_descriptions : library_declaration
+#		| include_statement
+#		| config_declaration 
+#		;
 
-library_descriptions : library_declaration
-		| include_statement
-		| config_declaration 
-		;
+#library_declaration : KW_LIBRARY library_identifier file_path_specs SEMICOLON
+#		| KW_LIBRARY library_identifier file_path_specs KW_INCDIR file_path_specs SEMICOLON 
+#		;
 
-library_declaration : KW_LIBRARY library_identifier file_path_specs SEMICOLON
-		| KW_LIBRARY library_identifier file_path_specs KW_INCDIR file_path_specs SEMICOLON 
-		;
+#file_path_specs : file_path_spec
+#		| file_path_specs COMMA file_path_spec 
+#		;
 
-file_path_specs : file_path_spec
-		| file_path_specs COMMA file_path_spec 
-		;
+#file_path_spec 	: file_path 
+#		;
 
-file_path_spec 	: file_path 
-		;
+#file_path 	: string
+#		;
 
-file_path 	: string
-		;
-
-include_statement: KW_INCLUDE file_path_spec SEMICOLON 
-		;
+#include_statement: KW_INCLUDE file_path_spec SEMICOLON 
+#		;
+#*/
    
-/* A.1.2 Configuration Source Text */
+/* A.1.2 SystemVerilog Source Text */
 
-config_declaration : KW_CONFIG config_identifier SEMICOLON design_statement config_rule_statement_os KW_ENDCONFIG
-		;
+source_text 	: timeunits_declaration_o description_list 
+	     	;
 
-design_statement : KW_DESIGN lib_cell_identifier_os SEMICOLON
-		;
-
-lib_cell_identifier_os : /* empty */
-		| cell_identifier
-		| library_identifier DOT cell_identifier
-		| lib_cell_identifier_os cell_identifier
-		| lib_cell_identifier_os library_identifier DOT cell_identifier 
-		;
-
-config_rule_statement_os : /* empty */
-		| config_rule_statement
-		| config_rule_statement_os config_rule_statement 
-		;
-
-config_rule_statement : KW_DEFAULT liblist_clause
-		| inst_clause liblist_clause
-		| inst_clause use_clause
-		| cell_clause liblist_clause
-		| cell_clause use_clause 
-		;
-
-inst_clause 	: KW_INSTANCE inst_name 
-		;
-
-inst_name   	: topmodule_identifier instance_identifier_os 
-		;
-
-instance_identifier_os  : /* empty */
-		| DOT instance_identifier
-		| instance_identifier_os DOT instance_identifier 
-		;
-
-cell_clause 	: KW_CELL cell_identifier 
-		| KW_CELL library_identifier DOT cell_identifier 
-		;
-
-liblist_clause  : KW_LIBLIST library_identifier_os 
-		;
-
-library_identifier_os : /* empty */
-		| library_identifier
-		| library_identifier_os library_identifier 
-		;
-
-use_clause 	: KW_USE library_identifier DOT cell_identifier COLON KW_CONFIG
-		| KW_USE library_identifier DOT cell_identifier
-		| KW_USE cell_identifier COLON KW_CONFIG
-		| KW_USE cell_identifier 
-		;
-
-/* A.1.3 Module and primitive source text. */
-
-source_text 	: description 
-		| source_text description 
+description_list: description
+		| description_list description 
 		;
 
 description 	: module_declaration
-		| udp_declaration 
-		;
+#		| udp_declaration 
+#		| interface_declaration 
+#		| program_declaration 
+#		| package_declaration 
+#		| attribute_instances package_item 
+#		| attribute_instances bind_directive
+#		| config_declaration 
+#		;
+
 
 module_declaration : 
-		/* new ANSI C style */
-		attribute_instances module_keyword module_identifier
-  			module_parameter_port_list list_of_port_declarations 
-			SEMICOLON non_port_module_item_os KW_ENDMODULE
-		/* old pre ANSI C style */
-		| attribute_instances module_keyword module_identifier
-  			module_parameter_port_list list_of_ports SEMICOLON
-  			module_item_os KW_ENDMODULE 
+	          module_ansi_header timeunits_declaration_o end_module
+		| module_ansi_header timeunits_declaration_o
+		    non_port_module_item_list end_module
+		| module_nonansi_header timeunits_declaration_o end_module
+		| module_nonansi_header timeunits_declaration_o 
+		    module_item_list end_module
+		;
+
+module_ansi_header: 
+		  attribute_instances module_keyword lifetime_o 
+		     module_identifier parameter_port_list_o SEMICOLON
+
+		| attribute_instances module_keyword lifetime_o 
+		     module_identifier parameter_port_list_o 
+		     list_of_port_declarations SEMICOLON
+		;
+
+module_nonansi_header: 
+		  attribute_instances module_keyword lifetime_o 
+		     module_identifier parameter_port_list_o 
+		     list_of_ports SEMICOLON
 		;
 
 module_keyword	: KW_MODULE
                 | KW_MACROMODULE 
 		;
 
-/* A.1.4 Module parameters and ports */
-
-module_parameter_port_list  : /* empty */
-		| HASH OPEN_BRACKET module_params CLOSE_BRACKET 
+end_module	: KW_ENDMODULE
+	   	| KW_ENDMODULE COLON module_identifier
 		;
 
-module_params   : parameter_declaration
-		| module_params COMMA parameter_declaration 
+#/* FIXME
+#config_declaration : KW_CONFIG config_identifier SEMICOLON design_statement config_rule_statement_os KW_ENDCONFIG
+#		;
+
+#design_statement : KW_DESIGN lib_cell_identifier_os SEMICOLON
+#		;
+#*  END FIXME */ 
+
+#lib_cell_identifier_os : /* empty */
+#		| cell_identifier
+#		| library_identifier DOT cell_identifier
+#		| lib_cell_identifier_os cell_identifier
+#		| lib_cell_identifier_os library_identifier DOT cell_identifier 
+#		;
+
+#config_rule_statement_os : /* empty */
+#		| config_rule_statement
+#		| config_rule_statement_os config_rule_statement 
+#		;
+
+#config_rule_statement : KW_DEFAULT liblist_clause
+#		| inst_clause liblist_clause
+#		| inst_clause use_clause
+#		| cell_clause liblist_clause
+#		| cell_clause use_clause 
+#		;
+
+#inst_clause 	: KW_INSTANCE inst_name 
+#		;
+
+#inst_name   	: topmodule_identifier instance_identifier_os 
+#		;
+
+#instance_identifier_os  : /* empty */
+#		| DOT instance_identifier
+#		| instance_identifier_os DOT instance_identifier 
+#		;
+
+#cell_clause 	: KW_CELL cell_identifier 
+#		| KW_CELL library_identifier DOT cell_identifier 
+#		;
+
+#liblist_clause  : KW_LIBLIST library_identifier_os 
+#		;
+
+#library_identifier_os : /* empty */
+#		| library_identifier
+#		| library_identifier_os library_identifier 
+#		;
+
+#use_clause 	: KW_USE library_identifier DOT cell_identifier COLON KW_CONFIG
+#		| KW_USE library_identifier DOT cell_identifier
+#		| KW_USE cell_identifier COLON KW_CONFIG
+#		| KW_USE cell_identifier 
+#		;
+
+timeunits_declaration_o : /* empty */
+		| timeunits_declaration
+		;
+				
+timeunits_declaration : KW_TIMEUNIT time_literal SEMICOLON
+		| KW_TIMEPRECISION time_literal SEMICOLON
+
+/* A.1.3 Module parameters and ports */
+
+parameter_port_list_o  : /* empty */
+ 		| parameter_port_list
+ 		;
+
+parameter_port_list : HASH OPEN_PAREN CLOSE_PAREN
+		| HASH OPEN_PAREN list_of_param_assignments CLOSE_PAREN
+#		| HASH OPEN_PAREN list_of_param_assignments { , parameter_port_declaration } )
+		| HASH OPEN_PAREN list_of_parameter_port_declarations CLOSE_PAREN
 		;
 
-list_of_ports   : /* empty */
-		| OPEN_BRACKET ports CLOSE_BRACKET 
+list_of_parameter_port_declarations : parameter_port_declaration
+		| list_of_parameter_port_declarations COMMA parameter_port_declaration
 		;
 
-list_of_port_declarations : OPEN_BRACKET CLOSE_BRACKET
-		| OPEN_BRACKET port_declarations CLOSE_BRACKET 
+parameter_port_declaration : parameter_declaration
+		| data_type list_of_param_assignments
+#		| type list_of_type_assignments
+#		;
+
+/* Old way */
+list_of_ports   : OPEN_PAREN ports CLOSE_PAREN 
+		| OPEN_PAREN CLOSE_PAREN
+		;
+/* Ansi way */
+list_of_port_declarations : OPEN_PAREN port_declarations CLOSE_PAREN 
 		;
 
-port_declarations : port_declarations COMMA port_dir port_declaration_l
-		| port_declarations COMMA identifier_csv port_dir port_declaration_l
-		| port_dir port_declaration_l 
-		;
+port_declarations : attribute_instances ansi_port_declaration 
+		| port_declarations COMMA attribute_instances ansi_port_declaration 
 
-port_declaration_l: net_type_o signed_o range_o port_identifier
-		| signed_o range_o port_identifier
-		| KW_REG signed_o range_o port_identifier eq_const_exp_o
-		| output_variable_type_o port_identifier
-		| output_variable_type port_identifier eq_const_exp_o 
+ansi_port_declaration: net_port_header port_identifier unpacked_dimension_o
+#	     | [ variable_port_header ] port_identifier { variable_dimension } [ = constant_expression ]
+#	     | [ net_port_header | variable_port_header ] . port_identifier 
+#               ( [ expression ] )
 		;
+		  
+port_direction	: KW_INPUT
+	       	| KW_OUTPUT
+		| KW_INOUT
+		| KW_REF
 
-identifier_csv	: /* empty */
-		| identifier
-		| COMMA identifier identifier_csv 
-		;
+net_port_header : port_direction net_port_type
+# This is a killer.  Don't allow this but user must give port direction.
+#		| net_port_type
 
-port_dir	: attribute_instances KW_OUTPUT
-		| attribute_instances KW_INPUT
-		| attribute_instances KW_INOUT 
-		;
-
-port_declaration: inout_declaration
-		| input_declaration
-		| output_declaration 
-		;
-
-ports           : /* empty */
+ports           : port
 		| ports COMMA port
-		| port 
 		;
 
 port            : port_expression
-		| DOT port_identifier OPEN_BRACKET port_expression CLOSE_BRACKET 
+		| DOT port_identifier OPEN_PAREN port_expression CLOSE_PAREN 
 		;
 
 port_expression : port_reference 
-		| port_expression COMMA port_reference 
+		| OPEN_CURLBRACE port_reference_list CLOSE_CURLBRACE 
 		;
+
+port_reference_list : port_reference
+		port_reference_list COMMA port_reference
+
 
 port_reference  : port_identifier
-		| port_identifier OPEN_SQ_BRACKET constant_expression CLOSE_SQ_BRACKET
-		| port_identifier OPEN_SQ_BRACKET range_expression CLOSE_SQ_BRACKET 
+		| port_identifier constant_select
 		;
 
-/* A.1.5 Module Items */
 
-module_item_os 	: /* empty */
-		| module_item
-		| module_item_os module_item 
+port_declaration : attribute_instances inout_declaration
+	        | attribute_instances input_declaration
+		| attribute_instances output_declaration
+#		 | attribute_instances ref_declaration
+#		 | attribute_instances interface_port_declaration
 		;
 
-non_port_module_item_os : /* empty */
+/* A.1.4 Module Items */
+
+module_common_items: module_or_generate_item_declaration
+#		| interface_instantiation		   	
+#		| program_instantiation		   	
+#		| program_instantiation		   	
+#		| concurrent_assertion_item
+#		| bind_directive
+		| continuous_assign
+#		| net_alias
+#		| initial_construct
+#		| final_construct
+#		| always_construct
+#		| loop_generate_construct
+#		| conditional_generate_construct
+		;
+
+module_item_list: module_item
+		| module_item_list module_item
+		;
+
+module_item 	: port_declaration SEMICOLON
  		| non_port_module_item
- 		| non_port_module_item_os non_port_module_item 
 		;
 
-module_item 	: module_or_generate_item
- 		| port_declaration SEMICOLON
- 		| attribute_instances generated_instantiation
- 		| attribute_instances local_parameter_declaration
- 		| attribute_instances parameter_declaration SEMICOLON
- 		| attribute_instances specify_block
- 		| attribute_instances specparam_declaration 
+module_or_generate_item : attribute_instances module_instantiation
+		| attribute_instances module_common_items
+#		| attribute_instances parameter_override
+#		| attribute_instances gate_instantiation
+#		| attribute_instances udp_instantiation
 		;
 
-module_or_generate_item : attribute_instances module_or_generate_item_declaration
-		| attribute_instances parameter_override
-		| attribute_instances continuous_assign
-		| attribute_instances gate_instantiation
-		| attribute_instances udp_instantiation
-		| attribute_instances module_instantiation
-		| attribute_instances initial_construct
-		| attribute_instances always_construct 
+module_or_generate_item_declaration : package_or_generate_item_declaration
+#		| genvar_declaration
+#		| clocking_declaration
+#		| KW_DEFAULT KW_CLOCKING clocking_identifier SEMICOLON
 		;
 
-module_or_generate_item_declaration : net_declaration
- 		| reg_declaration
- 		| integer_declaration
- 		| real_declaration
- 		| time_declaration
- 		| realtime_declaration
- 		| event_declaration
- 		| genvar_declaration
- 		| task_declaration
- 		| function_declaration 
+non_port_module_item_list : non_port_module_item
+		| non_port_module_item_list non_port_module_item
 		;
 
-non_port_module_item : attribute_instances generated_instantiation
-		| attribute_instances local_parameter_declaration
-		| attribute_instances module_or_generate_item
-		| attribute_instances parameter_declaration SEMICOLON
-		| attribute_instances specify_block
-		| attribute_instances specparam_declaration 
+non_port_module_item: module_or_generate_item
+#		| generate_region
+#		| specify_block
+#		| attribute_instances specparam_declaration
+#		| program_declaration
+#		| module_declaration
+#		| interface_declaration
+#		| timeunits_declaration
 		;
 
-parameter_override  : KW_DEFPARAM list_of_param_assignments SEMICOLON 
-		;
+
+#/* A.1.5 Configuration Source Text */
+
+/* A.1.10 Package Items */
+# package_item := package_or_generate_item_declaration
+# 	     | anonymous_program
+# 	     | timeunits_declaration17
+
+package_or_generate_item_declaration : net_declaration
+# 	     | data_declaration
+# 	| task_declaration
+# 	| function_declaration
+# 	| dpi_import_export
+# 	| extern_constraint_declaration
+# 	| class_declaration
+# 	| class_constructor_declaration 
+	| parameter_declaration SEMICOLON
+#	| local_parameter_declaration
+#	| covergroup_declaration
+#	| overload_declaration
+#	| concurrent_assertion_item_declaration 
+	| SEMICOLON
+	;
+
+/* A.2 Declarations */
+
+/* A.2.1 Declarations types */
 
 /* A.2.1.1 Module Parameter Declarations */
 
-signed_o 	: /* empty */
-	  	| KW_SIGNED 
-		;
+parameter_declaration : KW_PARAMETER data_type_or_implicit list_of_param_assignments
+#		      | KW_PARAMETER type list_of_type_assignments
 
-range_o  	: /* empty */
-	  	| range 
-		;
+/* A.2.1.2 Port Declarations */
 
-local_parameter_declaration : KW_LOCALPARAM signed_o range_o list_of_param_assignments SEMICOLON 
-		| KW_LOCALPARAM KW_INTEGER list_of_param_assignments SEMICOLON
-		| KW_LOCALPARAM KW_REAL list_of_param_assignments SEMICOLON
-		| KW_LOCALPARAM KW_REALTIME list_of_param_assignments SEMICOLON
-		| KW_LOCALPARAM KW_TIME list_of_param_assignments SEMICOLON 
-		;
+inout_declaration : KW_INOUT net_port_type list_of_port_identifiers
 
-parameter_declaration : KW_PARAMETER signed_o range_o list_of_param_assignments
-		| KW_PARAMETER KW_INTEGER list_of_param_assignments
-		| KW_PARAMETER KW_REAL list_of_param_assignments
-		| KW_PARAMETER KW_REALTIME list_of_param_assignments
-		| KW_PARAMETER KW_TIME list_of_param_assignments 
-		;
+input_declaration : KW_INPUT net_port_type list_of_port_identifiers
+#		  | input variable_port_type list_of_variable_identifiers
 
-specparam_declaration : KW_SPECPARAM range_o list_of_specparam_assignments SEMICOLON 
-		;
+output_declaration : KW_OUTPUT net_port_type list_of_port_identifiers
+#	      | output variable_port_type list_of_variable_port_identifiers
 
-/* A.2.1.2 Port declarations */
+#interface_port_declaration ::=
+#		  interface_identifier list_of_interface_identifiers
+#    | interface_identifier . modport_identifier list_of_interface_identifiers ref_declaration ::= ref variable_port_type list_of_port_identifiers
 
-net_type_o  	: /* empty */
-	     	| net_type 
-		;
-
-reg_o       	: /* empty */
-	     	| KW_REG 
-		;
-
-inout_declaration : KW_INOUT net_type_o signed_o range_o list_of_port_identifiers 
-		;
-
-input_declaration : KW_INPUT net_type_o signed_o range_o list_of_port_identifiers 
-		;
-
-output_declaration: KW_OUTPUT net_type_o signed_o range_o list_of_port_identifiers
-		| KW_OUTPUT reg_o signed_o range_o list_of_port_identifiers
-		| KW_OUTPUT output_variable_type_o list_of_port_identifiers
-		| KW_OUTPUT output_variable_type list_of_variable_port_identifiers
-		| KW_OUTPUT KW_REG signed_o range_o list_of_variable_port_identifiers 
-		;
 
 /* A.2.1.3 Type declarations */
+# data_declaration ::=
+#		   [ const ] [ var ] [ lifetime ] data_type_or_implicit 
+#		     list_of_variable_decl_assignments SEMICOLON
+#                 | type_declaration
+#                 | package_import_declaration 
+#                | virtual_interface_declaration
 
-event_declaration: KW_EVENT list_of_event_identifiers SEMICOLON 
+# package_import_declaration ::=
+# 			   import package_import_item { , package_import_item } ;
+
+# package_import_item ::= package_identifier :: identifier
+#	   | package_identifier :: *
+
+# genvar_declaration ::= genvar list_of_genvar_identifiers ;
+
+# net_declaration : net_type net_strength_option
+#		[ vectored | scalared ]
+#	        data_type_or_implicit 
+#		[ delay3 ] 
+#		list_of_net_decl_assignments ;
+
+net_declaration : net_type net_strength_option
+	        data_type_or_implicit 
+		list_of_net_decl_assignments SEMICOLON
+		{
+		   sverilog_expect_expression(parse_p,FALSE) ;
+		}
 		;
 
-genvar_declaration: KW_GENVAR list_of_genvar_identifiers SEMICOLON 
+net_strength_option: /* empty */
+		| drive_strength
+		| charge_strength
+
+# type_declaration ::= typedef data_type type_identifier { variable_dimension } ;
+# 	   | typedef interface_instance_identifier . type_identifier type_identifier ;
+#	   | typedef [ enum | struct | union | class ] type_identifier ;
+
+lifetime 	: KW_STATIC
+	  	| KW_AUTOMATIC
 		;
 
-integer_declaration: KW_INTEGER list_of_variable_identifiers SEMICOLON 
+lifetime_o	: /* empty */
+	   	| lifetime
 		;
 
-time_declaration: KW_TIME list_of_variable_identifiers SEMICOLON 
+
+/* A.2.1.2 Port Declarations */
+
+#local_parameter_declaration : KW_LOCALPARAM signed_o range_o list_of_param_assignments SEMICOLON 
+#		| KW_LOCALPARAM KW_INTEGER list_of_param_assignments SEMICOLON
+#		| KW_LOCALPARAM KW_REAL list_of_param_assignments SEMICOLON
+#		| KW_LOCALPARAM KW_REALTIME list_of_param_assignments SEMICOLON
+#		| KW_LOCALPARAM KW_TIME list_of_param_assignments SEMICOLON 
+#		;
+
+
+#specparam_declaration : KW_SPECPARAM range_o list_of_specparam_assignments SEMICOLON 
+#		;
+
+
+#event_declaration: KW_EVENT list_of_event_identifiers SEMICOLON 
+#		;
+
+#genvar_declaration: KW_GENVAR list_of_genvar_identifiers SEMICOLON 
+#		;
+
+#integer_declaration: KW_INTEGER list_of_variable_identifiers SEMICOLON 
+#		;
+
+#time_declaration: KW_TIME list_of_variable_identifiers SEMICOLON 
+#		;
+
+#real_declaration: KW_REAL list_of_real_identifiers SEMICOLON 
+#		;
+
+#realtime_declaration: KW_REALTIME list_of_real_identifiers SEMICOLON 
+#		;
+
+
+# net_declaration : net_type net_dec_p_ds
+#		| net_type OPEN_PAREN drive_strength net_dec_p_ds
+#		| KW_TRIREG net_dec_p_ds
+#		| KW_TRIREG OPEN_PAREN drive_strength  net_dec_p_ds
+#		| KW_TRIREG charge_strength net_dec_p_ds 
+#		;
+
+# net_dec_p_ds    : KW_VECTORED net_dec_p_vs
+# 		| KW_SCALARED net_dec_p_vs 
+# 		| net_dec_p_vs 
 		;
 
-real_declaration: KW_REAL list_of_real_identifiers SEMICOLON 
+# net_dec_p_vs    : KW_SIGNED net_dec_p_si 
+# 		| net_dec_p_si 
 		;
 
-realtime_declaration: KW_REALTIME list_of_real_identifiers SEMICOLON 
+# net_dec_p_si    : range net_dec_p_range
+# 		| net_dec_p_range 
 		;
 
-delay3_o	: /* empty */
-		| delay3 
+# net_dec_p_range : delay3 net_dec_p_delay
+# 		| net_dec_p_delay 
 		;
 
-drive_strength_o: /* empty */
-		| OPEN_BRACKET drive_strength 
+# net_dec_p_delay : list_of_net_identifiers SEMICOLON
+# 		| list_of_net_decl_assignments SEMICOLON 
 		;
 
-net_declaration : net_type net_dec_p_ds
-		| net_type OPEN_BRACKET drive_strength net_dec_p_ds
-		| KW_TRIREG net_dec_p_ds
-		| KW_TRIREG OPEN_BRACKET drive_strength  net_dec_p_ds
-		| KW_TRIREG charge_strength net_dec_p_ds 
-		;
+#reg_declaration	: KW_REG KW_SIGNED reg_dec_p_signed
+#		| KW_REG reg_dec_p_signed 
+#		;
 
-net_dec_p_ds    : KW_VECTORED net_dec_p_vs
-		| KW_SCALARED net_dec_p_vs 
-		| net_dec_p_vs 
-		;
+#reg_dec_p_signed: range reg_dec_p_range 
+#		| reg_dec_p_range
+#		;
 
-net_dec_p_vs    : KW_SIGNED net_dec_p_si 
-		| net_dec_p_si 
-		;
-
-net_dec_p_si    : range net_dec_p_range
-		| net_dec_p_range 
-		;
-
-net_dec_p_range : delay3 net_dec_p_delay
-		| net_dec_p_delay 
-		;
-
-net_dec_p_delay : list_of_net_identifiers SEMICOLON
-		| list_of_net_decl_assignments SEMICOLON 
-		;
-
-reg_declaration	: KW_REG KW_SIGNED reg_dec_p_signed
-		| KW_REG reg_dec_p_signed 
-		;
-
-reg_dec_p_signed: range reg_dec_p_range 
-		| reg_dec_p_range
-		;
-
-reg_dec_p_range: list_of_variable_identifiers SEMICOLON
-		;
+#reg_dec_p_range: list_of_variable_identifiers SEMICOLON
+#		;
 
 /* 2.2.1 Net and variable types */
+
+#casting_type 	: simple_type 
+#		| constant_primary 
+#		| signing
+		;
+
+data_type 	: integer_vector_type signing_o packed_dimension_o
+		| integer_atom_type signing_o
+#		| non_integer_type
+#		| struct_union packed_o signing_o '{' struct_union_member { struct_union_member } '}' { packed_dimension }
+#		| enum [ enum_base_type ] { enum_name_declaration { , enum_name_declaration } }
+#		| string
+#		| chandle
+#		| virtual [ interface ] interface_identifier
+#		| [ class_scope | package_scope ] type_identifier { packed_dimension }
+#		| class_type
+# 		| event
+#		| ps_covergroup_identifier
+#		| type_reference
+#		;
+
+data_type_or_implicit : /* empty */
+		| signing 
+		| packed_dimension
+		| signing packed_dimension
+		;
+
+#enum_base_type 	: integer_atom_type signing_o
+#		| integer_vector_type signing_o packed_dimension_o
+#		| type_identifier packed_dimension_o
+#		;
+		
+#enum_name_declaration : enum_identifier [ '[' integral_number 
+#                [ ':' integral_number ] ']' ] [ '=' constant_expression ] 
+		
+#class_scope 	: class_type ':'':'
+#		;
+
+#class_type 	: ps_class_identifier [ parameter_value_assignment ]
+#		    { ':'':' class_identifier [ parameter_value_assignment ] }
+#		;
+
+#integer_type 	: integer_vector_type 
+#		| integer_atom_type
+#		;
+
+integer_atom_type : KW_BYTE 
+	| KW_SHORTINT
+	| KW_INT
+	| KW_LONGINT
+	| KW_INTEGER
+	| KW_TIME
+	;
+
+integer_vector_type : KW_BIT 
+		| KW_LOGIC 
+		| KW_REG
+		;
+
+#non_integer_type : shortreal 
+#		| real 
+#		| realtime
+#		;
+
 
 net_type	: KW_SUPPLY0
 		| KW_SUPPLY1
 		| KW_TRI
 		| KW_TRIAND
 		| KW_TRIOR
+		| KW_TRIREG
+		| KW_TRI0
+		| KW_TRI1
+		| KW_UWIRE
 		| KW_WIRE 
+		{
+		   sverilog_expect_expression(parse_p,TRUE) ;
+		}
 		| KW_WAND
 		| KW_WOR
 		;
 
-output_variable_type_o: /* empty */
-		| output_variable_type
+net_port_type	: data_type_or_implicit
+	      	| net_type data_type_or_implicit
 		;
 
-output_variable_type: KW_INTEGER
-		| KW_TIME
+# variable_port_type : var_data_type
 		;
 
-real_type 	: real_identifier
-          	| real_identifier EQ constant_expression
-          	| real_identifier dimension dimensions
+#var_data_type 	: data_type 
+#		| var data_type_or_implicit
+
+signing_o	: /* empty */
+		| signing ;
+
+signing		: KW_SIGNED
+		| KW_UNSIGNED
 		;
 
-dimensions 	: /* empty */
-	    	| dimension 
- 		| dimensions dimension 
+#simple_type 	: integer_type 
+#		| non_integer_type 
+#		| ps_type_identifier 
+#		| ps_parameter_identifier
+#		;
+
+# struct_union_member: attribute_instances [random_qualifier] data_type_or_void list_of_variable_decl_assignments ';'
+
+#data_type_or_void : data_type 
+#		| void 
+#		;
+		
+#struct_union 	: struct 
+#		| union [ tagged ] 
+		
+#type_reference 	: type '(' expression27 ')' 
+#		| type '(' data_type ')'
+#		;
+
+
+
+#/* A.2.2.2 Strengths */
+
+drive_strength  : OPEN_PAREN strength0 COMMA strength1 CLOSE_PAREN
+		| OPEN_PAREN strength1 COMMA strength0 CLOSE_PAREN
+		| OPEN_PAREN strength0 COMMA KW_HIGHZ1 CLOSE_PAREN
+		| OPEN_PAREN strength1 COMMA KW_HIGHZ0 CLOSE_PAREN
+		| OPEN_PAREN KW_HIGHZ0 COMMA strength1 CLOSE_PAREN
+		| OPEN_PAREN KW_HIGHZ1 COMMA strength0 CLOSE_PAREN
 		;
 
-variable_type 	: variable_identifier
-		| variable_identifier EQ constant_expression
-		| variable_identifier dimension dimensions
-		;
 
-/* A.2.2.2 Strengths */
-
-drive_strength  : strength0 COMMA strength1 CLOSE_BRACKET
-		| strength1 COMMA strength0 CLOSE_BRACKET
-		| strength0 COMMA KW_HIGHZ1 CLOSE_BRACKET
-		| strength1 COMMA KW_HIGHZ0 CLOSE_BRACKET
-		| KW_HIGHZ0 COMMA strength1 CLOSE_BRACKET
-		| KW_HIGHZ1 COMMA strength0 CLOSE_BRACKET
+drive_strength_o: /* empty */
+		| drive_strength
 		;
 
 strength0	: KW_SUPPLY0 
@@ -692,489 +923,522 @@ strength1	: KW_SUPPLY1
 		| KW_WEAK1
 		;
 
-charge_strength : OPEN_BRACKET KW_SMALL CLOSE_BRACKET
-                | OPEN_BRACKET KW_MEDIUM CLOSE_BRACKET
-                | OPEN_BRACKET KW_LARGE CLOSE_BRACKET
+charge_strength : OPEN_PAREN KW_SMALL CLOSE_PAREN
+                | OPEN_PAREN KW_MEDIUM CLOSE_PAREN
+                | OPEN_PAREN KW_LARGE CLOSE_PAREN
                 ;
 
-/* A.2.2.3 Delays */
+#/* A.2.2.3 Delays */
 
-delay3 		: /* empty */
-	 	| HASH delay_value
-		| HASH OPEN_BRACKET delay_value CLOSE_BRACKET
-		| HASH OPEN_BRACKET delay_value COMMA delay_value CLOSE_BRACKET
-		| HASH OPEN_BRACKET delay_value COMMA delay_value COMMA delay_value CB
+delay3 		: HASH delay_value
+		| HASH OPEN_PAREN delay_value CLOSE_PAREN
+		| HASH OPEN_PAREN delay_value COMMA delay_value CLOSE_PAREN
+		| HASH OPEN_PAREN delay_value COMMA delay_value COMMA delay_value CB
 		;
 
-delay2    	: /* empty */
-	   	| HASH delay_value
-		| HASH OPEN_BRACKET delay_value CLOSE_BRACKET
-		| HASH OPEN_BRACKET delay_value COMMA delay_value CLOSE_BRACKET
+delay3_o	: /* empty */
+		| delay3 
 		;
+
+#delay2    	: /* empty */
+#	   	| HASH delay_value
+#		| HASH OPEN_PAREN delay_value CLOSE_PAREN
+#		| HASH OPEN_PAREN delay_value COMMA delay_value CLOSE_PAREN
+#		;
 
 delay_value 	: unsigned_number
-		| parameter_identifier
-		| specparam_identifier
-		| mintypmax_expression
-		;
+#		| parameter_identifier
+#		| specparam_identifier
+#		| mintypmax_expression
+#		;
 
 /* A.2.3 Declaration Lists */
+# list_of_defparam_assignments ::= defparam_assignment { , defparam_assignment }
 
-dimensions_o	: /* empty */
-	     	| dimensions 
-		;
-
-list_of_event_identifiers : event_identifier dimensions_o
-		| list_of_event_identifiers COMMA event_identifier dimensions_o
-		;
-
-list_of_genvar_identifiers: genvar_identifier
-		| list_of_genvar_identifiers COMMA genvar_identifier
-		;
+# list_of_genvar_identifiers ::= genvar_identifier { , genvar_identifier } 
+			   
+# list_of_interface_identifiers ::= interface_identifier { unpacked_dimension }
+#			   { , interface_identifier { unpacked_dimension } }
 
 list_of_net_decl_assignments : net_decl_assignment
 		| list_of_net_decl_assignments COMMA net_decl_assignment
+
+list_of_param_assignments : param_assignment 
+		| list_of_param_assignments param_assignment
 		;
 
-list_of_net_identifiers: net_identifier dimensions_o
-		| list_of_net_identifiers COMMA net_identifier dimensions_o
+list_of_port_identifiers : unpacked_port_identifier
+		| list_of_port_identifiers COMMA unpacked_port_identifier
 		;
 
-list_of_param_assignments : param_assignment
- 		| list_of_param_assignments COMMA param_assignment
- 		| list_of_param_assignments COMMA KW_PARAMETER param_assignment
+unpacked_port_identifier: port_identifier
+		| port_identifier unpacked_dimension_list
 		;
 
-list_of_port_identifiers: port_identifier
-		| port_identifier OPEN_SQ_BRACKET constant_expression CLOSE_SQ_BRACKET
-		| list_of_port_identifiers COMMA port_identifier
-		| list_of_port_identifiers COMMA port_identifier OPEN_SQ_BRACKET 
-			constant_expression CLOSE_SQ_BRACKET 
-		;
+# list_of_udp_port_identifiers ::= port_identifier { , port_identifier }
 
-list_of_real_identifiers: real_type
-		| list_of_real_identifiers COMMA real_type
-		;
+# list_of_specparam_assignments ::= specparam_assignment { , specparam_assignment }
 
-list_of_specparam_assignments: specparam_assignment
-		| list_of_specparam_assignments COMMA specparam_assignment
-		;
+# list_of_tf_variable_identifiers ::= port_identifier { variable_dimension } [ = expression ] { , port_identifier { variable_dimension } [ = expression ] }
 
-list_of_variable_identifiers: variable_type
-		| list_of_variable_identifiers COMMA variable_type
-		;
+# list_of_type_assignments ::= type_assignment { , type_assignment }
+			   
+# list_of_variable_decl_assignments ::= variable_decl_assignment { , variable_decl_assignment }
 
-eq_const_exp_o 	: /* empty */
-	       	| EQ constant_expression
-		;
+# list_of_variable_identifiers ::= variable_identifier { variable_dimension } { , variable_identifier { variable_dimension } }
 
-list_of_variable_port_identifiers : port_identifier eq_const_exp_o
-		| list_of_variable_port_identifiers COMMA port_identifier eq_const_exp_o
-		;
+# list_of_variable_port_identifiers ::= port_identifier { variable_dimension } [ = constant_expression ] { , port_identifier { variable_dimension } [ = constant_expression ] }
+
+# list_of_virtual_interface_decl ::=
+# 	   variable_identifier [ = interface_instance_identifier ]
+# 	   { , variable_identifier [ = interface_instance_identifier ] }
+
 
 /* A.2.4 Declaration Assignments */
 
-net_decl_assignment: net_identifier EQ expression 
-		| net_identifier
+net_decl_assignment: identifier unpacked_dimension_o
+		| identifier unpacked_dimension_o EQ expression 
+		| SVID
+		| SVID EQ expression
 		;
+
+/*
+net_decl_assignment: NET_DECL_ID
+*/
 
 param_assignment: parameter_identifier EQ constant_expression 
 		;
 
-specparam_assignment: specparam_identifier EQ constant_mintypmax_expression
-		| pulse_control_specparam
-		;
+#specparam_assignment: specparam_identifier EQ constant_mintypmax_expression
+#		| pulse_control_specparam
+#		;
 
-error_limit_value_o: /* empty */
-		| COMMA error_limit_value
-		;
+#error_limit_value_o: /* empty */
+#		| COMMA error_limit_value
+#		;
 
-pulse_control_specparam : KW_PATHPULSE EQ OPEN_BRACKET reject_limit_value 
-			error_limit_value_o CLOSE_BRACKET SEMICOLON 
-		| KW_PATHPULSE specify_input_terminal_descriptor '$'
-  			specify_output_terminal_descriptor EQ OPEN_BRACKET 
-			reject_limit_value error_limit_value_o 
-			CLOSE_BRACKET SEMICOLON
-		;
+#pulse_control_specparam : KW_PATHPULSE EQ OPEN_PAREN reject_limit_value 
+#			error_limit_value_o CLOSE_PAREN SEMICOLON 
+#		| KW_PATHPULSE specify_input_terminal_descriptor '$'
+#  			specify_output_terminal_descriptor EQ OPEN_PAREN 
+#			reject_limit_value error_limit_value_o 
+#			CLOSE_PAREN SEMICOLON
+#		;
 
-error_limit_value: limit_value
-		;
+#error_limit_value: limit_value
+#		;
 
-reject_limit_value: limit_value
-		;
+#reject_limit_value: limit_value
+#		;
 
-limit_value	: constant_mintypmax_expression
-	    	;
+#limit_value	: constant_mintypmax_expression
+#	    	;
 
 /* A.2.5 Declaration ranges */
 
-dimension 	: OPEN_SQ_BRACKET constant_expression COLON constant_expression
-			CLOSE_SQ_BRACKET
+unpacked_dimension : OPEN_SQ_BRACKET constant_range CLOSE_SQ_BRACKET 
+		| OPEN_SQ_BRACKET constant_expression CLOSE_SQ_BRACKET
 		;
 
-range     	: OPEN_SQ_BRACKET constant_expression COLON constant_expression
-			CLOSE_SQ_BRACKET
+unpacked_dimension_o : /* empty */
+		| unpacked_dimension
 		;
 
-/* A.2.6 Function Declarations */
-
-automatic_o	: /* empty */
-	    	| KW_AUTOMATIC
+unpacked_dimension_list : unpacked_dimension
+		| unpacked_dimension_list unpacked_dimension
 		;
 
-function_declaration : KW_FUNCTION automatic_o signed_o range_or_type_o 
-		     	function_identifier SEMICOLON function_item_declarations
-			function_statement KW_ENDFUNCTION
-		| KW_FUNCTION automatic_o signed_o range_or_type_o 
-			function_identifier OPEN_BRACKET function_port_list 
-			CLOSE_BRACKET SEMICOLON block_item_declarations 
-			function_statement KW_ENDFUNCTION
+packed_dimension_o : /* empty */
+		| packed_dimension
 		;
 
-block_item_declarations: /* empty */ 
-  		| block_item_declaration
-		| block_item_declarations block_item_declaration
+packed_dimension : OPEN_SQ_BRACKET constant_range CLOSE_SQ_BRACKET
+		| unsized_dimension
 		;
 
-function_item_declarations: /* empty */
-		| function_item_declaration
- 		| function_item_declarations function_item_declaration
+packed_dimension_list: packed_dimension
+		| packed_dimension_list packed_dimension
 		;
 
-function_item_declaration: block_item_declaration 
-		| tf_input_declaration SEMICOLON
+associative_dimension : OPEN_SQ_BRACKET data_type CLOSE_SQ_BRACKET
+		| OPEN_SQ_BRACKET KW_ASTERISK CLOSE_SQ_BRACKET
 		;
 
-function_port_list : attribute_instances tf_input_declaration tf_input_declarations
+variable_dimension : unsized_dimension
+		| unpacked_dimension
+#		| associative_dimension
+		| queue_dimension
 		;
 
-tf_input_declarations: /* empty */
-		| COMMA attribute_instances tf_input_declaration tf_input_declarations
+queue_dimension : OPEN_SQ_BRACKET KW_DOLLAR_SIGN CLOSE_SQ_BRACKET
+		| OPEN_SQ_BRACKET KW_DOLLAR_SIGN COLON constant_expression CLOSE_SQ_BRACKET
 		;
-
-range_or_type_o	: /* empty */
-		| range_or_type
-		;
-
-range_or_type	: range
-		| KW_INTEGER
-		| KW_REAL
-		| KW_REALTIME
-		| KW_TIME
-		;
-
-/* A.2.7 Task Declarations */
-
-task_declaration: KW_TASK automatic_o task_identifier SEMICOLON task_item_declarations 
-  			statement KW_ENDTASK
-		| KW_TASK automatic_o task_identifier OPEN_BRACKET task_port_list 
-  			CLOSE_BRACKET SEMICOLON block_item_declarations 
-			statement KW_ENDTASK
-		;
-
-task_item_declarations: /* empty */ 
-		| task_item_declaration
-		| task_item_declarations task_item_declaration
-		;
-
-task_item_declaration : block_item_declaration
-		| attribute_instances tf_input_declaration SEMICOLON
-		| attribute_instances tf_output_declaration SEMICOLON
-		| attribute_instances tf_inout_declaration SEMICOLON
-		;
-
-task_port_list	: task_port_item
- 		| task_port_list COMMA task_port_item
-		;
-
-task_port_item	: attribute_instances tf_input_declaration  SEMICOLON
-		| attribute_instances tf_output_declaration SEMICOLON
-		| attribute_instances tf_inout_declaration  SEMICOLON
-		;
-
-tf_input_declaration: KW_INPUT reg_o signed_o range_o list_of_port_identifiers
-		| KW_INPUT task_port_type_o list_of_port_identifiers
-		;
-
-tf_output_declaration: KW_OUTPUT reg_o signed_o range_o list_of_port_identifiers
-		| KW_OUTPUT task_port_type_o list_of_port_identifiers
-		;
-
-tf_inout_declaration: KW_INOUT reg_o signed_o range_o list_of_port_identifiers
-		| KW_INOUT task_port_type_o list_of_port_identifiers
-		;
-
-task_port_type_o : /* empty */
-		| task_port_type 
-		;
-task_port_type	: KW_TIME
-		| KW_REAL
-		| KW_REALTIME
-		| KW_INTEGER
+		
+unsized_dimension : OPEN_SQ_BRACKET CLOSE_SQ_BRACKET
 		;
 
 
-/* A.2.8 Block item declarations */
+#/* A.2.6 Function Declarations */
 
-block_item_declaration : attribute_instances block_reg_declaration
-		| attribute_instances event_declaration
-		| attribute_instances integer_declaration
-		| attribute_instances local_parameter_declaration
-		| attribute_instances parameter_declaration SEMICOLON
-		| attribute_instances real_declaration
-		| attribute_instances realtime_declaration
-		| attribute_instances time_declaration
-		;
+#automatic_o	: /* empty */
+#	    	| KW_AUTOMATIC
+#		;
 
-block_reg_declaration: KW_REG signed_o range_o list_of_block_variable_identifiers SEMICOLON
-		;
+#function_declaration : KW_FUNCTION automatic_o signed_o range_or_type_o 
+#		     	function_identifier SEMICOLON function_item_declarations
+#			function_statement KW_ENDFUNCTION
+#		| KW_FUNCTION automatic_o signed_o range_or_type_o 
+#			function_identifier OPEN_PAREN function_port_list 
+#			CLOSE_PAREN SEMICOLON block_item_declarations 
+#			function_statement KW_ENDFUNCTION
+#		;
 
-list_of_block_variable_identifiers: block_variable_type
-		| list_of_block_variable_identifiers COMMA block_variable_type
-		;
+#block_item_declarations: /* empty */ 
+#  		| block_item_declaration
+#		| block_item_declarations block_item_declaration
+#		;
 
-block_variable_type: variable_identifier
-		| variable_identifier dimensions
-		;
+#function_item_declarations: /* empty */
+#		| function_item_declaration
+# 		| function_item_declarations function_item_declaration
+#		;
+
+#function_item_declaration: block_item_declaration 
+#		| tf_input_declaration SEMICOLON
+#		;
+
+#function_port_list : attribute_instances tf_input_declaration tf_input_declarations
+#		;
+
+#tf_input_declarations: /* empty */
+#		| COMMA attribute_instances tf_input_declaration tf_input_declarations
+#		;
+
+#range_or_type_o	: /* empty */
+#		| range_or_type
+#		;
+
+#range_or_type	: range
+#		| KW_INTEGER
+#		| KW_REAL
+#		| KW_REALTIME
+#		| KW_TIME
+#		;
+
+#/* A.2.7 Task Declarations */
+
+#task_declaration: KW_TASK automatic_o task_identifier SEMICOLON task_item_declarations 
+#  			statement KW_ENDTASK
+#		| KW_TASK automatic_o task_identifier OPEN_PAREN task_port_list 
+#  			CLOSE_PAREN SEMICOLON block_item_declarations 
+#			statement KW_ENDTASK
+#		;
+
+#task_item_declarations: /* empty */ 
+#		| task_item_declaration
+#		| task_item_declarations task_item_declaration
+#		;
+
+#task_item_declaration : block_item_declaration
+#		| attribute_instances tf_input_declaration SEMICOLON
+#		| attribute_instances tf_output_declaration SEMICOLON
+#		| attribute_instances tf_inout_declaration SEMICOLON
+#		;
+
+#task_port_list	: task_port_item
+# 		| task_port_list COMMA task_port_item
+#		;
+
+#task_port_item	: attribute_instances tf_input_declaration  SEMICOLON
+#		| attribute_instances tf_output_declaration SEMICOLON
+#		| attribute_instances tf_inout_declaration  SEMICOLON
+#		;
+
+#tf_input_declaration: KW_INPUT reg_o signed_o range_o list_of_port_identifiers
+#		| KW_INPUT task_port_type_o list_of_port_identifiers
+#		;
+
+#tf_output_declaration: KW_OUTPUT reg_o signed_o range_o list_of_port_identifiers
+#		| KW_OUTPUT task_port_type_o list_of_port_identifiers
+#		;
+
+#tf_inout_declaration: KW_INOUT reg_o signed_o range_o list_of_port_identifiers
+#		| KW_INOUT task_port_type_o list_of_port_identifiers
+#		;
+
+#task_port_type_o : /* empty */
+#		| task_port_type 
+#		;
+#task_port_type	: KW_TIME
+#		| KW_REAL
+#		| KW_REALTIME
+#		| KW_INTEGER
+#		;
 
 
-/* A.3.1 primitive instantiation and instances */
+#/* A.2.8 Block item declarations */
 
-delay2_o 	: /* empty */
-		| delay2
-		;
+#block_item_declaration : attribute_instances block_reg_declaration
+#		| attribute_instances event_declaration
+#		| attribute_instances integer_declaration
+#		| attribute_instances local_parameter_declaration
+#		| attribute_instances parameter_declaration SEMICOLON
+#		| attribute_instances real_declaration
+#		| attribute_instances realtime_declaration
+#		| attribute_instances time_declaration
+#		;
 
-gate_instantiation : cmos_switchtype cmos_switch_instances SEMICOLON
-		| mos_switchtype mos_switch_instances SEMICOLON
-		| pass_switchtype pass_switch_instances SEMICOLON
-		| gate_enable SEMICOLON
-		| gate_n_output SEMICOLON
-		| gate_pass_en_switch SEMICOLON
-		| gate_n_input SEMICOLON
-		| KW_PULLDOWN pulldown_strength_o pull_gate_instances SEMICOLON
-		| KW_PULLUP pullup_strength_o pull_gate_instances SEMICOLON
-		;
+#block_reg_declaration: KW_REG signed_o range_o list_of_block_variable_identifiers SEMICOLON
+#		;
 
-/* -------------------------------------------------------------------------*/
+#list_of_block_variable_identifiers: block_variable_type
+#		| list_of_block_variable_identifiers COMMA block_variable_type
+#		;
 
-OB 		: OPEN_BRACKET
+#block_variable_type: variable_identifier
+#		| variable_identifier dimensions
+#		;
+
+
+#/* A.3.1 primitive instantiation and instances */
+
+#delay2_o 	: /* empty */
+#		| delay2
+#		;
+
+#gate_instantiation : cmos_switchtype cmos_switch_instances SEMICOLON
+#		| mos_switchtype mos_switch_instances SEMICOLON
+#		| pass_switchtype pass_switch_instances SEMICOLON
+#		| gate_enable SEMICOLON
+#		| gate_n_output SEMICOLON
+#		| gate_pass_en_switch SEMICOLON
+#		| gate_n_input SEMICOLON
+#		| KW_PULLDOWN pulldown_strength_o pull_gate_instances SEMICOLON
+#		| KW_PULLUP pullup_strength_o pull_gate_instances SEMICOLON
+#		;
+
+#/* -------------------------------------------------------------------------*/
+
+OB 		: OPEN_PAREN
      		;
 
-CB 		: CLOSE_BRACKET
+CB 		: CLOSE_PAREN
      		;
 
-gate_n_output	: gatetype_n_output n_output_gate_instances
-		| gatetype_n_output OB drive_strength delay2 n_output_gate_instances
-		| gatetype_n_output OB drive_strength n_output_gate_instances
-		| gatetype_n_output delay2 n_output_gate_instances
-		| gatetype_n_output OB output_terminal COMMA input_terminal CB gate_n_output_a_id
-		;
+#gate_n_output	: gatetype_n_output n_output_gate_instances
+#		| gatetype_n_output OB drive_strength delay2 n_output_gate_instances
+#		| gatetype_n_output OB drive_strength n_output_gate_instances
+#		| gatetype_n_output delay2 n_output_gate_instances
+#		| gatetype_n_output OB output_terminal COMMA input_terminal CB gate_n_output_a_id
+#		;
 
-gate_n_output_a_id: /* empty */
-		| COMMA n_output_gate_instances
-		;
+#gate_n_output_a_id: /* empty */
+#		| COMMA n_output_gate_instances
+#		;
 
-gatetype_n_output: KW_BUF
-		| KW_NOT
-		;
+#gatetype_n_output: KW_BUF
+#		| KW_NOT
+#		;
 
-n_output_gate_instances: n_output_gate_instance
-		| n_output_gate_instances COMMA n_output_gate_instance
-		;
+#n_output_gate_instances: n_output_gate_instance
+#		| n_output_gate_instances COMMA n_output_gate_instance
+#		;
 
-n_output_gate_instance: name_of_gate_instance OPEN_BRACKET output_terminals 
-		      	COMMA input_terminal CLOSE_BRACKET
-		;
+#n_output_gate_instance: name_of_gate_instance OPEN_PAREN output_terminals 
+#		      	COMMA input_terminal CLOSE_PAREN
+#		;
 
-/* -------------------------------------------------------------------------*/
+#/* -------------------------------------------------------------------------*/
 
-gate_enable 	: enable_gatetype enable_gate_instances
-		| enable_gatetype OB drive_strength delay2 enable_gate_instances
-		| enable_gatetype OB drive_strength enable_gate_instances
-		| enable_gatetype OB output_terminal COMMA input_terminal COMMA 
-  			enable_terminal CB COMMA n_output_gate_instances
-		| enable_gatetype OB output_terminal COMMA input_terminal COMMA 
-  			enable_terminal CB
-		| enable_gatetype delay3 enable_gate_instances
-		;
+#gate_enable 	: enable_gatetype enable_gate_instances
+#		| enable_gatetype OB drive_strength delay2 enable_gate_instances
+#		| enable_gatetype OB drive_strength enable_gate_instances
+#		| enable_gatetype OB output_terminal COMMA input_terminal COMMA 
+#  			enable_terminal CB COMMA n_output_gate_instances
+#		| enable_gatetype OB output_terminal COMMA input_terminal COMMA 
+#  			enable_terminal CB
+#		| enable_gatetype delay3 enable_gate_instances
+#		;
 
-enable_gate_instances: enable_gate_instance
-		| enable_gate_instances COMMA enable_gate_instance
-		;
+#enable_gate_instances: enable_gate_instance
+#		| enable_gate_instances COMMA enable_gate_instance
+#		;
 
-enable_gate_instance: name_of_gate_instance OPEN_BRACKET output_terminal COMMA
-			input_terminal COMMA enable_terminal CLOSE_BRACKET
-		;
+#enable_gate_instance: name_of_gate_instance OPEN_PAREN output_terminal COMMA
+#			input_terminal COMMA enable_terminal CLOSE_PAREN
+#		;
 
-enable_gatetype	: KW_BUFIF0
-		| KW_BUFIF1
-		| KW_NOTIF0
-		| KW_NOTIF1
-		;
+#enable_gatetype	: KW_BUFIF0
+#		| KW_BUFIF1
+#		| KW_NOTIF0
+#		| KW_NOTIF1
+#		;
 
-/* -------------------------------------------------------------------------*/
+#/* -------------------------------------------------------------------------*/
 
-gate_n_input : gatetype_n_input n_input_gate_instances
-		| gatetype_n_input OB drive_strength delay2 n_input_gate_instances
-		| gatetype_n_input OB drive_strength n_input_gate_instances 
-		| gatetype_n_input OB output_terminal COMMA input_terminals CB
-		| gatetype_n_input OB output_terminal COMMA input_terminals CB 
-  			COMMA n_input_gate_instances
-		| gatetype_n_input delay3 n_input_gate_instances
-		;
-
-
-gatetype_n_input: KW_AND
-		| KW_NAND
-		| KW_OR
-		| KW_NOR
-		| KW_XOR
-		| KW_XNOR
-		;
-
-/* -------------------------------------------------------------------------*/
-
-gate_pass_en_switch: KW_TRANIF0  delay2 pass_enable_switch_instances
-		| KW_TRANIF1  delay2 pass_enable_switch_instances
-		| KW_RTRANIF1 delay2 pass_enable_switch_instances
-		| KW_RTRANIF0 delay2 pass_enable_switch_instances
-		;
-
-pass_enable_switch_instances: pass_enable_switch_instance
-		| pass_enable_switch_instances COMMA pass_enable_switch_instance
-		;
+#gate_n_input : gatetype_n_input n_input_gate_instances
+#		| gatetype_n_input OB drive_strength delay2 n_input_gate_instances
+#		| gatetype_n_input OB drive_strength n_input_gate_instances 
+#		| gatetype_n_input OB output_terminal COMMA input_terminals CB
+#		| gatetype_n_input OB output_terminal COMMA input_terminals CB 
+#  			COMMA n_input_gate_instances
+#		| gatetype_n_input delay3 n_input_gate_instances
+#		;
 
 
-pass_enable_switch_instance: name_of_gate_instance OPEN_BRACKET inout_terminal 
-			 COMMA inout_terminal COMMA enable_terminal 
-			 CLOSE_BRACKET
-		;
+#gatetype_n_input: KW_AND
+#		| KW_NAND
+#		| KW_OR
+#		| KW_NOR
+#		| KW_XOR
+#		| KW_XNOR
+#		;
 
-/* -------------------------------------------------------------------------*/
+#/* -------------------------------------------------------------------------*/
 
-pull_gate_instances: pull_gate_instance
-		| pull_gate_instances COMMA pull_gate_instance
-		;
+#gate_pass_en_switch: KW_TRANIF0  delay2 pass_enable_switch_instances
+#		| KW_TRANIF1  delay2 pass_enable_switch_instances
+#		| KW_RTRANIF1 delay2 pass_enable_switch_instances
+#		| KW_RTRANIF0 delay2 pass_enable_switch_instances
+#		;
 
-pass_switch_instances: pass_switch_instance
-		| pass_switch_instances COMMA pass_switch_instance
-		;
-
-n_input_gate_instances: n_input_gate_instance
-		| n_input_gate_instances COMMA n_input_gate_instance
-		;
-
-mos_switch_instances: mos_switch_instance
-		| mos_switch_instances COMMA mos_switch_instance
-		;
-
-cmos_switch_instances: cmos_switch_instance
-		| cmos_switch_instances COMMA cmos_switch_instance
-		;
+#pass_enable_switch_instances: pass_enable_switch_instance
+#		| pass_enable_switch_instances COMMA pass_enable_switch_instance
+#		;
 
 
-pull_gate_instance: name_of_gate_instance OPEN_BRACKET output_terminal CLOSE_BRACKET
-		;
+#pass_enable_switch_instance: name_of_gate_instance OPEN_PAREN inout_terminal 
+#			 COMMA inout_terminal COMMA enable_terminal 
+#			 CLOSE_PAREN
+#		;
 
-pass_switch_instance: name_of_gate_instance OPEN_BRACKET inout_terminal 
-		    	COMMA inout_terminal CLOSE_BRACKET
-		;
+#/* -------------------------------------------------------------------------*/
+
+#pull_gate_instances: pull_gate_instance
+#		| pull_gate_instances COMMA pull_gate_instance
+#		;
+
+#pass_switch_instances: pass_switch_instance
+#		| pass_switch_instances COMMA pass_switch_instance
+#		;
+
+#n_input_gate_instances: n_input_gate_instance
+#		| n_input_gate_instances COMMA n_input_gate_instance
+#		;
+
+#mos_switch_instances: mos_switch_instance
+#		| mos_switch_instances COMMA mos_switch_instance
+#		;
+
+#cmos_switch_instances: cmos_switch_instance
+#		| cmos_switch_instances COMMA cmos_switch_instance
+#		;
 
 
-n_input_gate_instance: name_of_gate_instance OPEN_BRACKET output_terminal 
-		     	COMMA input_terminals CLOSE_BRACKET
-		;
+#pull_gate_instance: name_of_gate_instance OPEN_PAREN output_terminal CLOSE_PAREN
+#		;
 
-mos_switch_instance: name_of_gate_instance OPEN_BRACKET output_terminal 
-		   	COMMA input_terminal COMMA enable_terminal CLOSE_BRACKET
-		;
+#pass_switch_instance: name_of_gate_instance OPEN_PAREN inout_terminal 
+#		    	COMMA inout_terminal CLOSE_PAREN
+#		;
 
-cmos_switch_instance: name_of_gate_instance OPEN_BRACKET output_terminal 
-		    	COMMA input_terminal COMMA ncontrol_terminal 
-			COMMA pcontrol_terminal CLOSE_BRACKET
-		;
 
-output_terminals: output_terminals COMMA output_terminal
- 		| output_terminal
-		;
+#n_input_gate_instance: name_of_gate_instance OPEN_PAREN output_terminal 
+#		     	COMMA input_terminals CLOSE_PAREN
+#		;
 
-input_terminals: input_terminal
-		| input_terminals COMMA input_terminal
-		;
+#mos_switch_instance: name_of_gate_instance OPEN_PAREN output_terminal 
+#		   	COMMA input_terminal COMMA enable_terminal CLOSE_PAREN
+#		;
 
-/* A.3.2 primitive strengths */
+#cmos_switch_instance: name_of_gate_instance OPEN_PAREN output_terminal 
+#		    	COMMA input_terminal COMMA ncontrol_terminal 
+#			COMMA pcontrol_terminal CLOSE_PAREN
+#		;
 
-pulldown_strength_o: /* empty */
-		| pulldown_strength
-		;
+#output_terminals: output_terminals COMMA output_terminal
+# 		| output_terminal
+#		;
 
-pulldown_strength: OPEN_BRACKET strength0 COMMA strength1 CLOSE_BRACKET
-		| OPEN_BRACKET strength1 COMMA strength0 CLOSE_BRACKET
-		| OPEN_BRACKET strength1 CLOSE_BRACKET
-		;
+#input_terminals: input_terminal
+#		| input_terminals COMMA input_terminal
+#		;
 
-pullup_strength_o: /* empty */
-		| pullup_strength
-		;
+#/* A.3.2 primitive strengths */
 
-pullup_strength	: OPEN_BRACKET strength0 COMMA strength1 CLOSE_BRACKET
-		| OPEN_BRACKET strength1 COMMA strength0 CLOSE_BRACKET
-		| OPEN_BRACKET strength1 CLOSE_BRACKET
-		;
+#pulldown_strength_o: /* empty */
+#		| pulldown_strength
+#		;
 
-name_of_gate_instance :  /* empty */
-		| gate_instance_identifier range_o
-		;
+#pulldown_strength: OPEN_PAREN strength0 COMMA strength1 CLOSE_PAREN
+#		| OPEN_PAREN strength1 COMMA strength0 CLOSE_PAREN
+#		| OPEN_PAREN strength1 CLOSE_PAREN
+#		;
 
-/* A.3.3 primitive terminals */
+#pullup_strength_o: /* empty */
+#		| pullup_strength
+#		;
 
-enable_terminal	: expression
-		;
+#pullup_strength	: OPEN_PAREN strength0 COMMA strength1 CLOSE_PAREN
+#		| OPEN_PAREN strength1 COMMA strength0 CLOSE_PAREN
+#		| OPEN_PAREN strength1 CLOSE_PAREN
+#		;
 
-input_terminal	: expression
-		;
+#name_of_gate_instance :  /* empty */
+#		| gate_instance_identifier range_o
+#		;
 
-ncontrol_terminal: expression
-		;
+#/* A.3.3 primitive terminals */
 
-pcontrol_terminal: expression
-		;
+#enable_terminal	: expression
+#		;
 
-inout_terminal	: net_lvalue
-	       	;
+#input_terminal	: expression
+#		;
+
+#ncontrol_terminal: expression
+#		;
+
+#pcontrol_terminal: expression
+#		;
+
+#inout_terminal	: net_lvalue
+#	       	;
 	      
-output_terminal	: net_lvalue
+#output_terminal	: net_lvalue
+#		;
+
+#/* A.3.4 primitive gate and switch types */
+
+#cmos_switchtype	: KW_CMOS delay3
+#		| KW_RCMOS delay3
+#		;
+
+#mos_switchtype	: KW_NMOS delay3 
+#		| KW_PMOS  delay3
+#		| KW_RNMOS delay3
+#		| KW_RPMOS delay3
+#		;
+
+#pass_switchtype	: KW_TRAN delay2
+#		| KW_RTRAN delay2
+#		;
+
+#/* A.4.1 module instantiation */
+
+module_instantiation: module_identifier parameter_value_assignment_o 
+		    hierarchical_instance_list SEMICOLON
 		;
 
-/* A.3.4 primitive gate and switch types */
-
-cmos_switchtype	: KW_CMOS delay3
-		| KW_RCMOS delay3
-		;
-
-mos_switchtype	: KW_NMOS delay3 
-		| KW_PMOS  delay3
-		| KW_RNMOS delay3
-		| KW_RPMOS delay3
-		;
-
-pass_switchtype	: KW_TRAN delay2
-		| KW_RTRAN delay2
-		;
-
-/* A.4.1 module instantiation */
-
-module_instantiation: module_identifier HASH delay_value 
-		    	parameter_value_assignment_o module_instances SEMICOLON
-		| module_identifier parameter_value_assignment_o 
-			module_instances SEMICOLON
+hierarchical_instance_list : hierarchical_instance
+		| hierarchical_instance_list COMMA hierarchical_instance
 		;
 
 parameter_value_assignment_o: /* empty */
 		| parameter_value_assignment
 		;
 
-parameter_value_assignment: HASH OPEN_BRACKET list_of_parameter_assignments CLOSE_BRACKET
+parameter_value_assignment: HASH OPEN_PAREN list_of_parameter_assignments CLOSE_PAREN
 		;
 
 list_of_parameter_assignments: ordered_parameter_assignments
@@ -1189,27 +1453,23 @@ named_parameter_assignments: named_parameter_assignment
 		| named_parameter_assignments COMMA named_parameter_assignment
 		;
 
-module_instances : module_instance
-		| module_instances COMMA module_instance
 		;
 
 ordered_parameter_assignment : expression
 		;
 
-named_parameter_assignment: DOT parameter_identifier OPEN_BRACKET 
-			expression_o CLOSE_BRACKET
+named_parameter_assignment: DOT parameter_identifier OPEN_PAREN CLOSE_PAREN
+		| DOT parameter_identifier OPEN_PAREN expression CLOSE_PAREN
 		;
 
-module_instance	: name_of_instance OPEN_BRACKET list_of_port_connections 
-			CLOSE_BRACKET
-		;
+hierarchical_instance : name_of_instance OPEN_PAREN list_of_port_connections CLOSE_PAREN
 
-name_of_instance: module_instance_identifier range_o
-		;
-
-list_of_port_connections: /* empty */
-		| ordered_port_connections
+list_of_port_connections : ordered_port_connections
 		| named_port_connections
+		;
+
+name_of_instance: module_instance_identifier 
+#  		| module_instance_identifier range
 		;
 
 ordered_port_connections: ordered_port_connection
@@ -1220,212 +1480,234 @@ named_port_connections: named_port_connection
 		| named_port_connections COMMA named_port_connection
 		;
 
-ordered_port_connection : attribute_instances expression_o
+ordered_port_connection : /* empty */ 
+		| expression
+		| list_of_attribute_instances expression
 		;
 
-named_port_connection : DOT port_identifier OPEN_BRACKET expression_o CLOSE_BRACKET
+named_port_connection : DOT port_identifier named_open_paren named_close_paren
+		| DOT port_identifier named_open_paren expression named_close_paren
+		| list_of_attribute_instances DOT port_identifier named_open_paren named_close_paren
+		| list_of_attribute_instances DOT port_identifier named_open_paren expression named_close_paren
 		;
 
-expression_o 	: /* empty */
-	     	| expression
+named_open_paren : OPEN_PAREN
+		 {
+		   sverilog_expect_expression(parse_p,TRUE) ;
+		 }
+
+named_close_paren : CLOSE_PAREN
+		 {
+		   sverilog_expect_expression(parse_p,FALSE) ;
+		 }
+
+#/* A.4.2 Generated instantiation */
+
+# generated_instantiation : KW_GENERATE generate_items KW_ENDGENERATE 
 		;
 
-/* A.4.2 Generated instantiation */
-
-generated_instantiation : KW_GENERATE generate_items KW_ENDGENERATE 
+# generate_items 	: generate_item
+# 		| generate_items generate_item
 		;
 
-generate_items 	: generate_item
-		| generate_items generate_item
+#generate_item_or_null: /* empty */
+#		| generate_item 
+#		;
+
+# generate_item 	: generate_block
+#		| generate_conditional_statement
+#		| generate_case_statement
+#		| generate_loop_statement
+#		| generate_block
+#		| module_or_generate_item
+#		;
+
+#generate_conditional_statement: KW_IF OPEN_PAREN constant_expression 
+#			CLOSE_PAREN generate_item_or_null
+#  			KW_ELSE generate_item_or_null
+#		| KW_IF OPEN_PAREN constant_expression CLOSE_PAREN 
+#			generate_item_or_null
+#		;
+
+#generate_case_statement: KW_CASE OPEN_PAREN constant_expression 
+#			CLOSE_PAREN genvar_case_items KW_ENDCASE
+#		;
+
+#genvar_case_items: /* empty */
+#		| genvar_case_item
+#		| genvar_case_items genvar_case_item
+#		;
+
+#genvar_case_item: constant_expressions COLON generate_item_or_null
+#		| KW_DEFAULT COLON generate_item_or_null
+#		| KW_DEFAULT generate_item_or_null
+#		;
+
+#generate_loop_statement: KW_FOR OPEN_PAREN genvar_assignment SEMICOLON 
+# 			constant_expression SEMICOLON genvar_assignment 
+#			CLOSE_PAREN KW_BEGIN COLON generate_block_identifier 
+#			generate_items KW_END
+#		;
+
+#genvar_assignment: genvar_identifier EQ constant_expression
+#		;
+
+#generate_block	: KW_BEGIN generate_items KW_END
+#		| KW_BEGIN COLON generate_block_identifier generate_items KW_END
+#		;
+
+#/* A.5.1 UDP Declaration */
+
+#udp_declaration : attribute_instances KW_PRIMITIVE udp_identifier OPEN_PAREN 
+#			udp_port_list CLOSE_PAREN SEMICOLON 
+#			udp_port_declarations udp_body KW_ENDPRIMITIVE
+#		| attribute_instances KW_PRIMITIVE udp_identifier OPEN_PAREN
+#  			udp_declaration_port_list CLOSE_PAREN SEMICOLON 
+#			udp_body KW_ENDPRIMITIVE
+#		;
+
+#udp_port_declarations: udp_port_declaration
+#		| udp_port_declarations udp_port_declaration
+#		;
+
+#/* A.5.2 UDP Ports */
+
+#udp_port_list	: output_port_identifier COMMA input_port_identifiers
+#		;
+
+#input_port_identifiers: input_port_identifier
+#		| input_port_identifiers COMMA input_port_identifier
+#		;
+
+#udp_declaration_port_list: udp_output_declaration COMMA udp_input_declarations
+#		;
+
+#udp_input_declarations: udp_input_declaration
+#		| udp_input_declarations udp_input_declaration
+#		;
+
+#udp_port_declaration: udp_output_declaration SEMICOLON
+#		| udp_input_declaration SEMICOLON
+#		| udp_reg_declaration SEMICOLON
+#;
+
+#udp_output_declaration: attribute_instances KW_OUTPUT port_identifier
+#		| attribute_instances KW_OUTPUT KW_REG port_identifier
+#		| attribute_instances KW_OUTPUT KW_REG port_identifier 
+#			EQ constant_expression
+#		;
+
+#udp_input_declaration: attribute_instances KW_INPUT list_of_port_identifiers
+#		;
+
+#udp_reg_declaration: attribute_instances KW_REG variable_identifier
+#		;
+
+#/* A.5.3 UDP body */
+
+#udp_body	: KW_TABLE combinational_entrys KW_ENDTABLE
+#		| udp_initial_statement KW_TABLE sequential_entrys KW_ENDTABLE
+#		| KW_TABLE sequential_entrys KW_ENDTABLE
+#		;
+
+#sequential_entrys: sequential_entry
+#		| sequential_entrys sequential_entry
+#		;
+
+#combinational_entrys: combinational_entry
+#		| combinational_entrys combinational_entry
+#		;
+
+#combinational_entry: level_symbols COLON output_symbol SEMICOLON
+#		;
+
+#sequential_entry: level_symbols   COLON level_symbol COLON next_state SEMICOLON
+#		| edge_input_list COLON level_symbol COLON next_state SEMICOLON
+#		;
+
+#udp_initial_statement: KW_INITIAL output_port_identifier EQ init_val SEMICOLON
+#		;
+
+#init_val	: unsigned_number
+#		| number
+#		;
+
+#level_symbols_o	: /* empty */
+#		| level_symbols
+#		;
+
+#level_symbols	: level_symbol
+#		| level_symbols level_symbol
+#		;
+
+#edge_input_list	: level_symbols_o edge_indicator level_symbols_o
+#		;
+
+#edge_indicator	: OPEN_PAREN level_symbol level_symbol CLOSE_PAREN
+#		| edge_symbol
+#		;
+
+#next_state	: output_symbol
+#		| MINUS
+#		;
+
+#output_symbol	: unsigned_number
+#		| 'X' 
+#		| 'x'
+#		| TERNARY
+#		| SIMPLE_ID 
+#		;
+
+#level_symbol 	: unsigned_number
+#		| 'X'
+#		| 'x'
+#		| TERNARY
+#		| 'B'
+#		| 'b'
+#		| SIMPLE_ID
+#		;
+
+#edge_symbol	: 'r'
+#		| 'R'
+#		| 'f'
+#		| 'F'
+#		| 'p'
+#		| 'P'
+#		| 'n'
+#		| 'N'
+#		| SIMPLE_ID
+#		| STAR
+#		;
+
+#/* A.5.4 UDP instantiation */
+
+#udp_instantiation : udp_identifier drive_strength_o delay2_o udp_instances SEMICOLON
+#		;
+
+#udp_instances 	: udp_instance
+#		| udp_instances COMMA udp_instance
+#		;
+
+#udp_instance	: udp_instance_identifier range_o OPEN_PAREN output_terminal 
+#	     		COMMA input_terminals CLOSE_PAREN
+#		| OPEN_PAREN output_terminal COMMA input_terminals CLOSE_PAREN
+#		;
+
+
+#/* A.6.1 Continuous assignment statements */
+
+continuous_assign: assign_keyword drive_strength_o delay3_o 
+		   list_of_net_assignments SEMICOLON
+		{
+		   fprintf( stderr, "we found an assignment.\n" ) ;
+		   sverilog_expect_expression(parse_p,FALSE) ;
+		}
 		;
 
-generate_item_or_null: /* empty */
-		| generate_item 
-		;
-
-generate_item 	: generate_conditional_statement
-		| generate_case_statement
-		| generate_loop_statement
-		| generate_block
-		| module_or_generate_item
-		;
-
-generate_conditional_statement: KW_IF OPEN_BRACKET constant_expression 
-			CLOSE_BRACKET generate_item_or_null
-  			KW_ELSE generate_item_or_null
-		| KW_IF OPEN_BRACKET constant_expression CLOSE_BRACKET 
-			generate_item_or_null
-		;
-
-generate_case_statement: KW_CASE OPEN_BRACKET constant_expression 
-			CLOSE_BRACKET genvar_case_items KW_ENDCASE
-		;
-
-genvar_case_items: /* empty */
-		| genvar_case_item
-		| genvar_case_items genvar_case_item
-		;
-
-genvar_case_item: constant_expressions COLON generate_item_or_null
-		| KW_DEFAULT COLON generate_item_or_null
-		| KW_DEFAULT generate_item_or_null
-		;
-
-generate_loop_statement: KW_FOR OPEN_BRACKET genvar_assignment SEMICOLON 
- 			constant_expression SEMICOLON genvar_assignment 
-			CLOSE_BRACKET KW_BEGIN COLON generate_block_identifier 
-			generate_items KW_END
-		;
-
-genvar_assignment: genvar_identifier EQ constant_expression
-		;
-
-generate_block	: KW_BEGIN generate_items KW_END
-		| KW_BEGIN COLON generate_block_identifier generate_items KW_END
-		;
-
-/* A.5.1 UDP Declaration */
-
-udp_declaration : attribute_instances KW_PRIMITIVE udp_identifier OPEN_BRACKET 
-			udp_port_list CLOSE_BRACKET SEMICOLON 
-			udp_port_declarations udp_body KW_ENDPRIMITIVE
-		| attribute_instances KW_PRIMITIVE udp_identifier OPEN_BRACKET
-  			udp_declaration_port_list CLOSE_BRACKET SEMICOLON 
-			udp_body KW_ENDPRIMITIVE
-		;
-
-udp_port_declarations: udp_port_declaration
-		| udp_port_declarations udp_port_declaration
-		;
-
-/* A.5.2 UDP Ports */
-
-udp_port_list	: output_port_identifier COMMA input_port_identifiers
-		;
-
-input_port_identifiers: input_port_identifier
-		| input_port_identifiers COMMA input_port_identifier
-		;
-
-udp_declaration_port_list: udp_output_declaration COMMA udp_input_declarations
-		;
-
-udp_input_declarations: udp_input_declaration
-		| udp_input_declarations udp_input_declaration
-		;
-
-udp_port_declaration: udp_output_declaration SEMICOLON
-		| udp_input_declaration SEMICOLON
-		| udp_reg_declaration SEMICOLON
-;
-
-udp_output_declaration: attribute_instances KW_OUTPUT port_identifier
-		| attribute_instances KW_OUTPUT KW_REG port_identifier
-		| attribute_instances KW_OUTPUT KW_REG port_identifier 
-			EQ constant_expression
-		;
-
-udp_input_declaration: attribute_instances KW_INPUT list_of_port_identifiers
-		;
-
-udp_reg_declaration: attribute_instances KW_REG variable_identifier
-		;
-
-/* A.5.3 UDP body */
-
-udp_body	: KW_TABLE combinational_entrys KW_ENDTABLE
-		| udp_initial_statement KW_TABLE sequential_entrys KW_ENDTABLE
-		| KW_TABLE sequential_entrys KW_ENDTABLE
-		;
-
-sequential_entrys: sequential_entry
-		| sequential_entrys sequential_entry
-		;
-
-combinational_entrys: combinational_entry
-		| combinational_entrys combinational_entry
-		;
-
-combinational_entry: level_symbols COLON output_symbol SEMICOLON
-		;
-
-sequential_entry: level_symbols   COLON level_symbol COLON next_state SEMICOLON
-		| edge_input_list COLON level_symbol COLON next_state SEMICOLON
-		;
-
-udp_initial_statement: KW_INITIAL output_port_identifier EQ init_val SEMICOLON
-		;
-
-init_val	: unsigned_number
-		| number
-		;
-
-level_symbols_o	: /* empty */
-		| level_symbols
-		;
-
-level_symbols	: level_symbol
-		| level_symbols level_symbol
-		;
-
-edge_input_list	: level_symbols_o edge_indicator level_symbols_o
-		;
-
-edge_indicator	: OPEN_BRACKET level_symbol level_symbol CLOSE_BRACKET
-		| edge_symbol
-		;
-
-next_state	: output_symbol
-		| MINUS
-		;
-
-output_symbol	: unsigned_number
-		| 'X' 
-		| 'x'
-		| TERNARY
-		| SIMPLE_ID 
-		;
-
-level_symbol 	: unsigned_number
-		| 'X'
-		| 'x'
-		| TERNARY
-		| 'B'
-		| 'b'
-		| SIMPLE_ID
-		;
-
-edge_symbol	: 'r'
-		| 'R'
-		| 'f'
-		| 'F'
-		| 'p'
-		| 'P'
-		| 'n'
-		| 'N'
-		| SIMPLE_ID
-		| STAR
-		;
-
-/* A.5.4 UDP instantiation */
-
-udp_instantiation : udp_identifier drive_strength_o delay2_o udp_instances SEMICOLON
-		;
-
-udp_instances 	: udp_instance
-		| udp_instances COMMA udp_instance
-		;
-
-udp_instance	: udp_instance_identifier range_o OPEN_BRACKET output_terminal 
-	     		COMMA input_terminals CLOSE_BRACKET
-		| OPEN_BRACKET output_terminal COMMA input_terminals CLOSE_BRACKET
-		;
-
-
-/* A.6.1 Continuous assignment statements */
-
-continuous_assign: KW_ASSIGN drive_strength_o delay3_o list_of_net_assignments SEMICOLON
-		;
+assign_keyword	: KW_ASSIGN 
+		{
+		   sverilog_expect_expression(parse_p,TRUE) ;
+		}
 
 list_of_net_assignments: net_assignment
 		| list_of_net_assignments COMMA net_assignment
@@ -1434,498 +1716,499 @@ list_of_net_assignments: net_assignment
 net_assignment	: net_lvalue EQ expression
 		;
 
-/* A.6.2 Procedural blocks and assignments */
+#/* A.6.2 Procedural blocks and assignments */
 
-initial_construct: KW_INITIAL statement
-		;
+#initial_construct: KW_INITIAL statement
+#		;
 
-always_construct: KW_ALWAYS statement
-		;		
+#always_construct: KW_ALWAYS statement
+#		;		
 
-blocking_assignment: variable_lvalue EQ delay_or_event_control_o expression
-		;
+#blocking_assignment: variable_lvalue EQ delay_or_event_control_o expression
+#		;
 
-nonblocking_assignment: variable_lvalue LTE delay_or_event_control_o expression
-		;
+#nonblocking_assignment: variable_lvalue LTE delay_or_event_control_o expression
+#		;
 
-delay_or_event_control_o: /* empty */
-		| delay_or_event_control
-		;
+#delay_or_event_control_o: /* empty */
+#		| delay_or_event_control
+#		;
 
-procedural_continuous_assignments : KW_ASSIGN variable_assignment
-		| KW_DEASSIGN variable_lvalue
-		| KW_FORCE variable_assignment
-		| KW_FORCE net_assignment
-		| KW_RELEASE variable_lvalue
-		| KW_RELEASE net_lvalue
-		;
+#procedural_continuous_assignments : KW_ASSIGN variable_assignment
+#		| KW_DEASSIGN variable_lvalue
+#		| KW_FORCE variable_assignment
+#		| KW_FORCE net_assignment
+#		| KW_RELEASE variable_lvalue
+#		| KW_RELEASE net_lvalue
+#		;
 
-function_blocking_assignment: variable_lvalue EQ expression
-		;
+#function_blocking_assignment: variable_lvalue EQ expression
+#		;
 
-function_statement_or_null: function_statement
-		| attribute_instances SEMICOLON
-		;
+#function_statement_or_null: function_statement
+#		| attribute_instances SEMICOLON
+#		;
 
-/* A.6.3 Parallel and sequential blocks */
+#/* A.6.3 Parallel and sequential blocks */
 
-block_item_declarations: block_item_declaration
-		| block_item_declarations block_item_declaration
-		;
+#block_item_declarations: block_item_declaration
+#		| block_item_declarations block_item_declaration
+#		;
 
-function_statements_o: /* empty */
-		| function_statements
+#function_statements_o: /* empty */
+#		| function_statements
 
-function_statements: function_statement
-		| function_statements function_statement
-		;
+#function_statements: function_statement
+#		| function_statements function_statement
+#		;
 
-function_seq_block: KW_BEGIN function_statements_o KW_END
-		| KW_BEGIN COLON block_identifier block_item_declarations
-			function_statements_o KW_END
-		;
+#function_seq_block: KW_BEGIN function_statements_o KW_END
+#		| KW_BEGIN COLON block_identifier block_item_declarations
+#			function_statements_o KW_END
+#		;
 
-variable_assignment: variable_lvalue EQ expression
-		;
+#variable_assignment: variable_lvalue EQ expression
+#		;
 
-par_block	: KW_FORK statements_o KW_JOIN
-		| KW_FORK COLON block_identifier block_item_declarations 
-			statements_o KW_JOIN
-		;
+#par_block	: KW_FORK statements_o KW_JOIN
+#		| KW_FORK COLON block_identifier block_item_declarations 
+#			statements_o KW_JOIN
+#		;
 
-seq_block	: KW_BEGIN statements_o KW_END
-		| KW_BEGIN COLON block_identifier block_item_declarations 
-			statements_o KW_END
-		;
+#seq_block	: KW_BEGIN statements_o KW_END
+#		| KW_BEGIN COLON block_identifier block_item_declarations 
+#			statements_o KW_END
+#		;
 
-/* A.6.4 Statements */
+#/* A.6.4 Statements */
 
-statements_o	: /* empty */
-		| statements 
-		;
+#statements_o	: /* empty */
+#		| statements 
+#		;
 
-statements	: statement
-		| statements statement
-		;
+#statements	: statement
+#		| statements statement
+#		;
 
-statement	: attribute_instances blocking_assignment SEMICOLON
-		| attribute_instances task_enable
-		| attribute_instances nonblocking_assignment SEMICOLON
-		| attribute_instances case_statement
-		| attribute_instances conditional_statement
-		| attribute_instances disable_statement
-		| attribute_instances event_trigger
-		| attribute_instances loop_statement
-		| attribute_instances par_block
-		| attribute_instances procedural_continuous_assignments SEMICOLON
-		| attribute_instances procedural_timing_control_statement
-		| attribute_instances seq_block
-		| attribute_instances system_function_call SEMICOLON
-		| attribute_instances system_task_enable
-		| attribute_instances wait_statement
-		;
+#statement	: attribute_instances blocking_assignment SEMICOLON
+#		| attribute_instances task_enable
+#		| attribute_instances nonblocking_assignment SEMICOLON
+#		| attribute_instances case_statement
+#		| attribute_instances conditional_statement
+#		| attribute_instances disable_statement
+#		| attribute_instances event_trigger
+#		| attribute_instances loop_statement
+#		| attribute_instances par_block
+#		| attribute_instances procedural_continuous_assignments SEMICOLON
+#		| attribute_instances procedural_timing_control_statement
+#		| attribute_instances seq_block
+#		| attribute_instances system_function_call SEMICOLON
+#		| attribute_instances system_task_enable
+#		| attribute_instances wait_statement
+#		;
 
-statement_or_null: statement
-		| attribute_instances SEMICOLON
-		| SEMICOLON
-		;
+#statement_or_null: statement
+#		| attribute_instances SEMICOLON
+#		| SEMICOLON
+#		;
                   
-function_statement: attribute_instances function_blocking_assignment SEMICOLON
-		| attribute_instances function_case_statement
-		| attribute_instances function_conditional_statement
-		| attribute_instances function_loop_statement
-		| attribute_instances function_seq_block
-		| attribute_instances disable_statement
-		| attribute_instances system_function_call SEMICOLON
-		| attribute_instances system_task_enable
-		;
-
-/* A.6.5 Timing control statements */
-
-procedural_timing_control_statement: delay_or_event_control statement_or_null
-		;
-
-delay_or_event_control: delay_control
-		| event_control
-		| KW_REPEAT OPEN_BRACKET expression CLOSE_BRACKET event_control
-		;
-
-delay_control	: HASH delay_value
-		| HASH OPEN_BRACKET mintypmax_expression CLOSE_BRACKET
-		;
-
-
-disable_statement: KW_DISABLE hierarchical_task_identifier SEMICOLON
-		| KW_DISABLE hierarchical_block_identifier SEMICOLON
-		;
-
-event_control	: AT event_identifier
-		| AT OPEN_BRACKET event_expression CLOSE_BRACKET
-		| AT STAR
-		| AT ATTRIBUTE_START CLOSE_BRACKET
-		| AT OPEN_BRACKET STAR CLOSE_BRACKET
-		;
-
-event_trigger	: MINUS GT hierarchical_event_identifier
-		;
-
-event_expression: expression
-		| KW_POSEDGE expression
-		| KW_NEGEDGE expression
-		| event_expression KW_OR event_expression
-		| event_expression COMMA event_expression
-		;
-
-wait_statement	: KW_WAIT OPEN_BRACKET expression CLOSE_BRACKET statement_or_null
-		;
-
-/* A.6.6 Conditional Statemnets */
-
-conditional_statement: KW_IF OPEN_BRACKET expression CLOSE_BRACKET statement_or_null
-		| KW_IF OPEN_BRACKET expression CLOSE_BRACKET 
-			statement_or_null KW_ELSE statement_or_null
-		| if_else_if_statement
-		;
-
-if_else_if_statement: KW_IF OPEN_BRACKET expression CLOSE_BRACKET 
-		    	statement_or_null else_if_statements
-		| KW_IF OPEN_BRACKET expression CLOSE_BRACKET statement_or_null
-  			else_if_statements KW_ELSE statement_or_null
-		;
-
-else_if_statements: KW_ELSE KW_IF OPEN_BRACKET expression CLOSE_BRACKET 
-		  	statement_or_null
-		| else_if_statements KW_ELSE KW_IF OPEN_BRACKET expression
-  			CLOSE_BRACKET statement_or_null
-		;
-
-function_conditional_statement: KW_IF OPEN_BRACKET expression CLOSE_BRACKET 
-			function_statement_or_null
-		| KW_IF OPEN_BRACKET expression CLOSE_BRACKET 
-			function_statement_or_null KW_ELSE 
-			function_statement_or_null
- 		| function_if_else_if_statement
-		;
-
-function_else_if_statements: KW_ELSE KW_IF OPEN_BRACKET expression 
-			CLOSE_BRACKET function_statement_or_null
-		| function_else_if_statements KW_ELSE KW_IF OPEN_BRACKET 
-			expression CLOSE_BRACKET function_statement_or_null
-		;
-
-function_if_else_if_statement: KW_IF OPEN_BRACKET expression CLOSE_BRACKET 
-			function_statement_or_null function_else_if_statements
-		| KW_IF OPEN_BRACKET expression CLOSE_BRACKET function_statement_or_null
-  			function_else_if_statements KW_ELSE function_statement_or_null
-		;
-
-/* A.6.7 Case Statements */
-
-case_statement	: KW_CASE OPEN_BRACKET expression CLOSE_BRACKET case_items KW_ENDCASE
-		| KW_CASEZ OPEN_BRACKET expression CLOSE_BRACKET case_items KW_ENDCASE
-		| KW_CASEX OPEN_BRACKET expression CLOSE_BRACKET case_items KW_ENDCASE
-		;
-
-case_items      : case_item
-		| case_items case_item
-                ;
-
-expressions_o   : /* empty */
-		| expressions
-                ;
-
-case_item       : expressions COLON statement_or_null
-		| KW_DEFAULT statement_or_null
-		| KW_DEFAULT COLON statement_or_null
-		;
-
-function_case_statement: KW_CASE OPEN_BRACKET expression CLOSE_BRACKET 
-			function_case_items KW_ENDCASE
-		| KW_CASEZ OPEN_BRACKET expression CLOSE_BRACKET 
-			function_case_items KW_ENDCASE
-		| KW_CASEX OPEN_BRACKET expression CLOSE_BRACKET 
-			function_case_items KW_ENDCASE
-		;
-
-function_case_items: function_case_item
-		| function_case_items function_case_item
-		;
-
-function_case_item: expressions COLON function_statement_or_null
-		| KW_DEFAULT function_statement_or_null
-		| KW_DEFAULT COLON function_statement_or_null
-		;
-
-/* A.6.8 looping statements */
-
-function_loop_statement : KW_FOREVER function_statement
-		| KW_REPEAT OPEN_BRACKET expression CLOSE_BRACKET function_statement
-		| KW_WHILE OPEN_BRACKET expression CLOSE_BRACKET function_statement
-		| KW_FOR OPEN_BRACKET variable_assignment SEMICOLON expression
-			SEMICOLON variable_assignment  CLOSE_BRACKET function_statement
-		;
-
-loop_statement	: KW_FOREVER statement
-		| KW_REPEAT OPEN_BRACKET expression CLOSE_BRACKET statement
-		| KW_WHILE OPEN_BRACKET expression CLOSE_BRACKET statement
-		| KW_FOR OPEN_BRACKET variable_assignment SEMICOLON expression SEMICOLON
-  			variable_assignment  CLOSE_BRACKET statement
-		;
-
-
-/* A.6.9 task enable statements */
-
-system_task_enable: system_task_identifier OPEN_BRACKET expressions CLOSE_BRACKET SEMICOLON
-		|   system_task_identifier SEMICOLON
-		;
-
-task_enable	: hierarchical_task_identifier SEMICOLON
-		|   hierarchical_task_identifier OPEN_BRACKET expressions 
-			CLOSE_BRACKET SEMICOLON
-		;
-
-/* A.7.1 specify block declaration */
-
-specify_block	: KW_SPECIFY specify_items_o KW_ENDSPECIFY
-		;
-
-specify_items_o	: /* empty */
-		| specify_items
-		;
-
-specify_items	: specify_item
-		| specify_items specify_item
-		;
-
-specify_item	: specparam_declaration
-		| pulsestyle_declaration
-		| showcancelled_declaration
-		| path_declaration
-		| system_timing_check
-		;
-
-pulsestyle_declaration: KW_PULSESTYLE_ONEVENT list_of_path_outputs SEMICOLON
-		| KW_PULSESTYLE_ONDETECT list_of_path_outputs SEMICOLON
-		;
-
-showcancelled_declaration: KW_SHOWCANCELLED list_of_path_outputs SEMICOLON
-		| KW_NOSHOWCANCELLED list_of_path_outputs SEMICOLON
-		;
-
-/* A.7.2 specify path declarations */
-
-path_declaration : simple_path_declaration SEMICOLON
-                 | edge_sensitive_path_declaration SEMICOLON
-                 | state_dependent_path_declaration SEMICOLON
-                 ;
-
-simple_path_declaration : OPEN_BRACKET specify_input_terminal_descriptor 
-			polarity_operator_o EQ GT specify_output_terminal_descriptor 
-			CLOSE_BRACKET EQ path_delay_value
-		| OPEN_BRACKET list_of_path_inputs polarity_operator_o STAR GT 
-  			list_of_path_outputs CLOSE_BRACKET EQ path_delay_value
-		;
-
-
-list_of_path_inputs: specify_input_terminal_descriptor
-		| list_of_path_inputs COMMA specify_input_terminal_descriptor
-		;
-
-list_of_path_outputs: specify_output_terminal_descriptor
-		| list_of_path_outputs COMMA specify_output_terminal_descriptor
-		;
-
-/* A.7.3 specify block terminals */
-
-specify_input_terminal_descriptor: input_identifier
-		| input_identifier constant_expression
-		| input_identifier range_expression
-		;
-
-specify_output_terminal_descriptor: output_identifier
-		| output_identifier constant_expression
-		| output_identifier range_expression
-		;
-
-input_identifier : input_port_identifier
-		| inout_port_identifier
-		;
-
-output_identifier: output_port_identifier
-		| inout_port_identifier
-		;
-
-/* A.7.4 specify path delays */
-
-path_delay_value: list_of_path_delay_expressions
-		| OPEN_BRACKET list_of_path_delay_expressions CLOSE_BRACKET
-		;
-
-list_of_path_delay_expressions : path_delay_expression
-		| path_delay_expression COMMA path_delay_expression
-		| path_delay_expression COMMA path_delay_expression COMMA path_delay_expression
-		| path_delay_expression COMMA path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression
-		| path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression COMMA
-  			path_delay_expression
-		;
-
-path_delay_expression: constant_mintypmax_expression
-		;
-
-edge_sensitive_path_declaration: OPEN_BRACKET edge_identifier_o 
-			specify_input_terminal_descriptor EQ GT
-			specify_output_terminal_descriptor polarity_operator_o COLON
-			data_source_expression CLOSE_BRACKET EQ path_delay_value
-		| OPEN_BRACKET edge_identifier_o list_of_path_inputs STAR GT
-  			list_of_path_outputs polarity_operator_o COLON data_source_expression
-  			CLOSE_BRACKET EQ path_delay_value
-		;
-
-data_source_expression: expression
-		;     	
-
-edge_identifier_o : /* empty */
-		| edge_identifier
-		;     	
-
-edge_identifier	: KW_POSEDGE
-		| KW_NEGEDGE
-		;
-
-state_dependent_path_declaration: KW_IF OPEN_BRACKET module_path_expression 
-			CLOSE_BRACKET simple_path_declaration
-		| KW_IF OPEN_BRACKET module_path_expression CLOSE_BRACKET 
-  			edge_sensitive_path_declaration
-		| KW_IFNONE simple_path_declaration
-		;
-
-polarity_operator_o: /* empty */
-		| polarity_operator
-		;
-
-polarity_operator: PLUS
-		| MINUS
-		;
-
-/* A.7.5.1 System timing check commands */
-
-system_timing_check: /* empty */
-
-/* A.7.5.2 System timing check command arguments */
-
-/* A.7.5.3 System timing check evet definitions */
-
-/* A.8.1 Concatenations */
-
-concatenation : OPEN_SQ_BRACE expression concatenation_cont
-		;
-
-concatenation_cont: CLOSE_SQ_BRACE
-		| COMMA expression concatenation_cont
-		;
-
-constant_concatenation: OPEN_SQ_BRACE expression constant_concatenation_cont
-		;
-
-constant_concatenation_cont: CLOSE_SQ_BRACE
-		| COMMA expression concatenation_cont
-		;
-
-multiple_concatenation: OPEN_SQ_BRACE constant_expression concatenation CLOSE_SQ_BRACE
-		| OPEN_SQ_BRACE constant_expression concatenation_cont
-		;
-
-constant_multiple_concatenation: OPEN_SQ_BRACE constant_expression 
-			constant_concatenation CLOSE_SQ_BRACE
-		| OPEN_SQ_BRACE constant_expression constant_concatenation_cont
-		;
-
-module_path_concatenation: OPEN_SQ_BRACE module_path_expression modpath_concatenation_cont
-		;
-
-modpath_concatenation_cont: CLOSE_SQ_BRACE
-		| COMMA module_path_expression modpath_concatenation_cont
-		;
-
-module_path_multiple_concatenation: OPEN_SQ_BRACE constant_expression 
-			module_path_concatenation CLOSE_SQ_BRACE
-		;
-
-net_concatenation: OPEN_SQ_BRACE net_concatenation_value net_concatenation_cont
-		;
-
-net_concatenation_cont: CLOSE_SQ_BRACE
-		| COMMA net_concatenation_value net_concatenation_cont
-		;
-
-sq_bracket_expressions: OPEN_SQ_BRACKET expression CLOSE_SQ_BRACKET
-		| OPEN_SQ_BRACKET range_expression CLOSE_SQ_BRACKET
-		| OPEN_SQ_BRACKET expression CLOSE_SQ_BRACKET sq_bracket_expressions
-		;
-
-net_concatenation_value: hierarchical_net_identifier
-		| hierarchical_net_identifier sq_bracket_expressions
-		| hierarchical_net_identifier sq_bracket_expressions range_expression
-		| hierarchical_net_identifier range_expression
-		| net_concatenation
-		;
-
-variable_concatenation: OPEN_SQ_BRACE variable_concatenation_value 
-			variable_concatenation_cont
-		;
-
-variable_concatenation_cont: CLOSE_SQ_BRACE
-		| COMMA variable_concatenation_value variable_concatenation_cont
-		;
-
-variable_concatenation_value: hierarchical_variable_identifier
-		| hierarchical_variable_identifier sq_bracket_expressions
-		| hierarchical_variable_identifier sq_bracket_expressions 
-			range_expression
-		| hierarchical_variable_identifier range_expression
-		| variable_concatenation
-		;
-
-
-/* A.8.2 Function calls */
-
-constant_expressions: constant_expression
-		| constant_expressions COMMA constant_expression
-		;
-
-expressions	: expression 
-		| expressions COMMA expression
-		;
-
-constant_function_call: function_identifier attribute_instances 
-			OPEN_BRACKET constant_expressions CLOSE_BRACKET
-		;
-
-constant_function_call_pid: attribute_instances OPEN_BRACKET constant_expressions CLOSE_BRACKET
-		;
-
-function_call	: hierarchical_function_identifier attribute_instances 
-			OPEN_BRACKET expressions CLOSE_BRACKET
-		;
-
-system_function_call: system_function_identifier
-		| system_function_identifier OPEN_BRACKET CLOSE_BRACKET
-		| system_function_identifier OPEN_BRACKET expressions CLOSE_BRACKET
-		;
+#function_statement: attribute_instances function_blocking_assignment SEMICOLON
+#		| attribute_instances function_case_statement
+#		| attribute_instances function_conditional_statement
+#		| attribute_instances function_loop_statement
+#		| attribute_instances function_seq_block
+#		| attribute_instances disable_statement
+#		| attribute_instances system_function_call SEMICOLON
+#		| attribute_instances system_task_enable
+#		;
+
+#/* A.6.5 Timing control statements */
+
+#procedural_timing_control_statement: delay_or_event_control statement_or_null
+#		;
+
+#delay_or_event_control: delay_control
+#		| event_control
+#		| KW_REPEAT OPEN_PAREN expression CLOSE_PAREN event_control
+#		;
+
+#delay_control	: HASH delay_value
+#		| HASH OPEN_PAREN mintypmax_expression CLOSE_PAREN
+#		;
+
+
+#disable_statement: KW_DISABLE hierarchical_task_identifier SEMICOLON
+#		| KW_DISABLE hierarchical_block_identifier SEMICOLON
+#		;
+
+#event_control	: AT event_identifier
+#		| AT OPEN_PAREN event_expression CLOSE_PAREN
+#		| AT STAR
+#		| AT ATTRIBUTE_START CLOSE_PAREN
+#		| AT OPEN_PAREN STAR CLOSE_PAREN
+#		;
+
+#event_trigger	: MINUS GT hierarchical_event_identifier
+#		;
+
+#event_expression: expression
+#		| KW_POSEDGE expression
+#		| KW_NEGEDGE expression
+#		| event_expression KW_OR event_expression
+#		| event_expression COMMA event_expression
+#		;
+
+#wait_statement	: KW_WAIT OPEN_PAREN expression CLOSE_PAREN statement_or_null
+#		;
+
+#/* A.6.6 Conditional Statemnets */
+
+#conditional_statement: KW_IF OPEN_PAREN expression CLOSE_PAREN statement_or_null
+#		| KW_IF OPEN_PAREN expression CLOSE_PAREN 
+#			statement_or_null KW_ELSE statement_or_null
+#		| if_else_if_statement
+#		;
+
+#if_else_if_statement: KW_IF OPEN_PAREN expression CLOSE_PAREN 
+#		    	statement_or_null else_if_statements
+#		| KW_IF OPEN_PAREN expression CLOSE_PAREN statement_or_null
+#  			else_if_statements KW_ELSE statement_or_null
+#		;
+
+#else_if_statements: KW_ELSE KW_IF OPEN_PAREN expression CLOSE_PAREN 
+#		  	statement_or_null
+#		| else_if_statements KW_ELSE KW_IF OPEN_PAREN expression
+#  			CLOSE_PAREN statement_or_null
+#		;
+
+#function_conditional_statement: KW_IF OPEN_PAREN expression CLOSE_PAREN 
+#			function_statement_or_null
+#		| KW_IF OPEN_PAREN expression CLOSE_PAREN 
+#			function_statement_or_null KW_ELSE 
+#			function_statement_or_null
+# 		| function_if_else_if_statement
+#		;
+
+#function_else_if_statements: KW_ELSE KW_IF OPEN_PAREN expression 
+#			CLOSE_PAREN function_statement_or_null
+#		| function_else_if_statements KW_ELSE KW_IF OPEN_PAREN 
+#			expression CLOSE_PAREN function_statement_or_null
+#		;
+
+#function_if_else_if_statement: KW_IF OPEN_PAREN expression CLOSE_PAREN 
+#			function_statement_or_null function_else_if_statements
+#		| KW_IF OPEN_PAREN expression CLOSE_PAREN function_statement_or_null
+#  			function_else_if_statements KW_ELSE function_statement_or_null
+#		;
+
+#/* A.6.7 Case Statements */
+
+#case_statement	: KW_CASE OPEN_PAREN expression CLOSE_PAREN case_items KW_ENDCASE
+#		| KW_CASEZ OPEN_PAREN expression CLOSE_PAREN case_items KW_ENDCASE
+#		| KW_CASEX OPEN_PAREN expression CLOSE_PAREN case_items KW_ENDCASE
+#		;
+
+#case_items      : case_item
+#		| case_items case_item
+#                ;
+
+#expressions_o   : /* empty */
+#		| expressions
+#                ;
+
+#case_item       : expressions COLON statement_or_null
+#		| KW_DEFAULT statement_or_null
+#		| KW_DEFAULT COLON statement_or_null
+#		;
+
+#function_case_statement: KW_CASE OPEN_PAREN expression CLOSE_PAREN 
+#			function_case_items KW_ENDCASE
+#		| KW_CASEZ OPEN_PAREN expression CLOSE_PAREN 
+#			function_case_items KW_ENDCASE
+#		| KW_CASEX OPEN_PAREN expression CLOSE_PAREN 
+#			function_case_items KW_ENDCASE
+#		;
+
+#function_case_items: function_case_item
+#		| function_case_items function_case_item
+#		;
+
+#function_case_item: expressions COLON function_statement_or_null
+#		| KW_DEFAULT function_statement_or_null
+#		| KW_DEFAULT COLON function_statement_or_null
+#		;
+
+#/* A.6.8 looping statements */
+
+#function_loop_statement : KW_FOREVER function_statement
+#		| KW_REPEAT OPEN_PAREN expression CLOSE_PAREN function_statement
+#		| KW_WHILE OPEN_PAREN expression CLOSE_PAREN function_statement
+#		| KW_FOR OPEN_PAREN variable_assignment SEMICOLON expression
+#			SEMICOLON variable_assignment  CLOSE_PAREN function_statement
+#		;
+
+#loop_statement	: KW_FOREVER statement
+#		| KW_REPEAT OPEN_PAREN expression CLOSE_PAREN statement
+#		| KW_WHILE OPEN_PAREN expression CLOSE_PAREN statement
+#		| KW_FOR OPEN_PAREN variable_assignment SEMICOLON expression SEMICOLON
+#  			variable_assignment  CLOSE_PAREN statement
+#		;
+
+
+#/* A.6.9 task enable statements */
+
+#system_task_enable: system_task_identifier OPEN_PAREN expressions CLOSE_PAREN SEMICOLON
+#		|   system_task_identifier SEMICOLON
+#		;
+
+#task_enable	: hierarchical_task_identifier SEMICOLON
+#		|   hierarchical_task_identifier OPEN_PAREN expressions 
+#			CLOSE_PAREN SEMICOLON
+#		;
+
+#/* A.7.1 specify block declaration */
+
+#specify_block	: KW_SPECIFY specify_items_o KW_ENDSPECIFY
+#		;
+
+#specify_items_o	: /* empty */
+#		| specify_items
+#		;
+
+#specify_items	: specify_item
+#		| specify_items specify_item
+#		;
+
+#specify_item	: specparam_declaration
+#		| pulsestyle_declaration
+#		| showcancelled_declaration
+#		| path_declaration
+#		| system_timing_check
+#		;
+
+#pulsestyle_declaration: KW_PULSESTYLE_ONEVENT list_of_path_outputs SEMICOLON
+#		| KW_PULSESTYLE_ONDETECT list_of_path_outputs SEMICOLON
+#		;
+
+#showcancelled_declaration: KW_SHOWCANCELLED list_of_path_outputs SEMICOLON
+#		| KW_NOSHOWCANCELLED list_of_path_outputs SEMICOLON
+#		;
+
+#/* A.7.2 specify path declarations */
+
+#path_declaration : simple_path_declaration SEMICOLON
+#                 | edge_sensitive_path_declaration SEMICOLON
+#                 | state_dependent_path_declaration SEMICOLON
+#                 ;
+
+#simple_path_declaration : OPEN_PAREN specify_input_terminal_descriptor 
+#			polarity_operator_o EQ GT specify_output_terminal_descriptor 
+#			CLOSE_PAREN EQ path_delay_value
+#		| OPEN_PAREN list_of_path_inputs polarity_operator_o STAR GT 
+#  			list_of_path_outputs CLOSE_PAREN EQ path_delay_value
+#		;
+
+
+#list_of_path_inputs: specify_input_terminal_descriptor
+#		| list_of_path_inputs COMMA specify_input_terminal_descriptor
+#		;
+
+#list_of_path_outputs: specify_output_terminal_descriptor
+#		| list_of_path_outputs COMMA specify_output_terminal_descriptor
+#		;
+
+#/* A.7.3 specify block terminals */
+
+#specify_input_terminal_descriptor: input_identifier
+#		| input_identifier constant_expression
+#		| input_identifier range_expression
+#		;
+
+#specify_output_terminal_descriptor: output_identifier
+#		| output_identifier constant_expression
+#		| output_identifier range_expression
+#		;
+
+#input_identifier : input_port_identifier
+#		| inout_port_identifier
+#		;
+
+#output_identifier: output_port_identifier
+#		| inout_port_identifier
+#		;
+
+#/* A.7.4 specify path delays */
+
+#path_delay_value: list_of_path_delay_expressions
+#		| OPEN_PAREN list_of_path_delay_expressions CLOSE_PAREN
+#		;
+
+#list_of_path_delay_expressions : path_delay_expression
+#		| path_delay_expression COMMA path_delay_expression
+#		| path_delay_expression COMMA path_delay_expression COMMA path_delay_expression
+#		| path_delay_expression COMMA path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression
+#		| path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression COMMA
+#  			path_delay_expression
+#		;
+
+#path_delay_expression: constant_mintypmax_expression
+#		;
+
+#edge_sensitive_path_declaration: OPEN_PAREN edge_identifier_o 
+#			specify_input_terminal_descriptor EQ GT
+#			specify_output_terminal_descriptor polarity_operator_o COLON
+#			data_source_expression CLOSE_PAREN EQ path_delay_value
+#		| OPEN_PAREN edge_identifier_o list_of_path_inputs STAR GT
+#  			list_of_path_outputs polarity_operator_o COLON data_source_expression
+#  			CLOSE_PAREN EQ path_delay_value
+#		;
+
+#data_source_expression: expression
+#		;     	
+
+#edge_identifier_o : /* empty */
+#		| edge_identifier
+#		;     	
+
+#edge_identifier	: KW_POSEDGE
+#		| KW_NEGEDGE
+#		;
+
+#state_dependent_path_declaration: KW_IF OPEN_PAREN module_path_expression 
+#			CLOSE_PAREN simple_path_declaration
+#		| KW_IF OPEN_PAREN module_path_expression CLOSE_PAREN 
+#  			edge_sensitive_path_declaration
+#		| KW_IFNONE simple_path_declaration
+#		;
+
+#polarity_operator_o: /* empty */
+#		| polarity_operator
+#		;
+
+#polarity_operator: PLUS
+#		| MINUS
+#		;
+
+#/* A.7.5.1 System timing check commands */
+
+#system_timing_check: /* empty */
+
+#/* A.7.5.2 System timing check command arguments */
+
+#/* A.7.5.3 System timing check evet definitions */
+
+#/* A.8.1 Concatenations */
+
+concatenation : OPEN_CURLBRACE expression_list CLOSE_CURLBRACE
+		;
+
+expression_list : expression
+		| expression_list COMMA expression
+		;
+
+# constant_concatenation : OPEN_CURLBRACE constant_expression_list CLOSE_CURLBRACE
+# 		;
+
+# constant_expression_list : constant_expression
+# 		| constant_expression_list COMMA constant_expression
+# 		;
+
+multiple_concatenation: OPEN_CURLBRACE expression 
+		      OPEN_CURLBRACE expression_list CLOSE_CURLBRACE
+		      CLOSE_CURLBRACE
+		;
+
+#constant_multiple_concatenation: OPEN_CURLBRACE constant_expression 
+#			constant_concatenation CLOSE_CURLBRACE
+#		| OPEN_CURLBRACE constant_expression constant_concatenation_cont
+#		;
+
+#module_path_concatenation: OPEN_CURLBRACE module_path_expression modpath_concatenation_cont
+#		;
+
+#modpath_concatenation_cont: CLOSE_CURLBRACE
+#		| COMMA module_path_expression modpath_concatenation_cont
+#		;
+
+#module_path_multiple_concatenation: OPEN_CURLBRACE constant_expression 
+#			module_path_concatenation CLOSE_CURLBRACE
+#		;
+
+#net_concatenation: OPEN_CURLBRACE net_concatenation_value net_concatenation_cont
+#		;
+
+#net_concatenation_cont: CLOSE_CURLBRACE
+#		| COMMA net_concatenation_value net_concatenation_cont
+#		;
+
+#sq_bracket_expressions: OPEN_SQ_BRACKET expression CLOSE_SQ_BRACKET
+#		| OPEN_SQ_BRACKET range_expression CLOSE_SQ_BRACKET
+#		| OPEN_SQ_BRACKET expression CLOSE_SQ_BRACKET sq_bracket_expressions
+#		;
+
+#net_concatenation_value: hierarchical_net_identifier
+#		| hierarchical_net_identifier sq_bracket_expressions
+#		| hierarchical_net_identifier sq_bracket_expressions range_expression
+#		| hierarchical_net_identifier range_expression
+#		| net_concatenation
+#		;
+
+#variable_concatenation: OPEN_CURLBRACE variable_concatenation_value 
+#			variable_concatenation_cont
+#		;
+
+#variable_concatenation_cont: CLOSE_CURLBRACE
+#		| COMMA variable_concatenation_value variable_concatenation_cont
+#		;
+
+#variable_concatenation_value: hierarchical_variable_identifier
+#		| hierarchical_variable_identifier sq_bracket_expressions
+#		| hierarchical_variable_identifier sq_bracket_expressions 
+#			range_expression
+#		| hierarchical_variable_identifier range_expression
+#		| variable_concatenation
+#		;
+
+
+#/* A.8.2 Function calls */
+
+#constant_expressions: constant_expression
+#		| constant_expressions COMMA constant_expression
+#		;
+
+#expressions	: expression 
+#		| expressions COMMA expression
+#		;
+
+#constant_function_call: function_identifier attribute_instances 
+#			OPEN_PAREN constant_expressions CLOSE_PAREN
+#		;
+
+#constant_function_call_pid: attribute_instances OPEN_PAREN constant_expressions CLOSE_PAREN
+#		;
+
+#function_call	: hierarchical_function_identifier attribute_instances 
+#			OPEN_PAREN expressions CLOSE_PAREN
+#		;
+
+#system_function_call: system_function_identifier
+#		| system_function_identifier OPEN_PAREN CLOSE_PAREN
+#		| system_function_identifier OPEN_PAREN expressions CLOSE_PAREN
+#		;
 
 /* A.8.3 Expressions */
 
@@ -1934,44 +2217,44 @@ conditional_expression : expression TERNARY attribute_instances
 		;
 
 constant_expression: constant_primary
-		| unary_operator attribute_instances constant_primary
-		| constant_expression PLUS  attribute_instances constant_expression
-		| constant_expression MINUS attribute_instances constant_expression
-		| constant_expression STAR  attribute_instances constant_expression
-		| constant_expression DIV   attribute_instances constant_expression
-		| constant_expression MOD   attribute_instances constant_expression
-		| constant_expression L_EQ  attribute_instances constant_expression
-		| constant_expression L_NEQ attribute_instances constant_expression
-		| constant_expression C_EQ  attribute_instances constant_expression
-		| constant_expression C_NEQ attribute_instances constant_expression
-		| constant_expression L_AND attribute_instances constant_expression
-		| constant_expression L_OR  attribute_instances constant_expression
-		| constant_expression POW   attribute_instances constant_expression
-		| constant_expression LT    attribute_instances constant_expression
-		| constant_expression LTE   attribute_instances constant_expression
-		| constant_expression GT    attribute_instances constant_expression
-		| constant_expression GTE   attribute_instances constant_expression
-		| constant_expression B_AND attribute_instances constant_expression
-		| constant_expression B_OR  attribute_instances constant_expression
-		| constant_expression B_XOR attribute_instances constant_expression
-		| constant_expression B_EQU attribute_instances constant_expression
-		| constant_expression LSR   attribute_instances constant_expression
-		| constant_expression LSL   attribute_instances constant_expression
-		| constant_expression ASR   attribute_instances constant_expression
-		| constant_expression ASL   attribute_instances constant_expression
-		| constant_expression TERNARY attribute_instances 
-			constant_expression COLON constant_expression
-		| string
-		;
+#		| unary_operator attribute_instances constant_primary
+#		| constant_expression PLUS  attribute_instances constant_expression
+#		| constant_expression MINUS attribute_instances constant_expression
+#		| constant_expression STAR  attribute_instances constant_expression
+#		| constant_expression DIV   attribute_instances constant_expression
+#		| constant_expression MOD   attribute_instances constant_expression
+#		| constant_expression L_EQ  attribute_instances constant_expression
+#		| constant_expression L_NEQ attribute_instances constant_expression
+#		| constant_expression C_EQ  attribute_instances constant_expression
+#		| constant_expression C_NEQ attribute_instances constant_expression
+#		| constant_expression L_AND attribute_instances constant_expression
+#		| constant_expression L_OR  attribute_instances constant_expression
+#		| constant_expression POW   attribute_instances constant_expression
+#		| constant_expression LT    attribute_instances constant_expression
+#		| constant_expression LTE   attribute_instances constant_expression
+#		| constant_expression GT    attribute_instances constant_expression
+#		| constant_expression GTE   attribute_instances constant_expression
+#		| constant_expression B_AND attribute_instances constant_expression
+#		| constant_expression B_OR  attribute_instances constant_expression
+#		| constant_expression B_XOR attribute_instances constant_expression
+#		| constant_expression B_EQU attribute_instances constant_expression
+#		| constant_expression LSR   attribute_instances constant_expression
+#		| constant_expression LSL   attribute_instances constant_expression
+#		| constant_expression ASR   attribute_instances constant_expression
+#		| constant_expression ASL   attribute_instances constant_expression
+#		| constant_expression TERNARY attribute_instances 
+#			constant_expression COLON constant_expression
+#		| string
+#		;
 
-constant_mintypmax_expression: constant_expression
-		| constant_expression COLON constant_expression COLON constant_expression
-		;
+#constant_mintypmax_expression: constant_expression
+#		| constant_expression COLON constant_expression COLON constant_expression
+#		;
 
-constant_range_expression: constant_expression
-		| constant_expression COLON       constant_expression
-		| constant_expression IDX_PRT_SEL constant_expression
-		;
+#constant_range_expression: constant_expression
+#		| constant_expression COLON       constant_expression
+#		| constant_expression IDX_PRT_SEL constant_expression
+#		;
 
 expression	: primary
 		| unary_operator attribute_instances primary
@@ -2001,101 +2284,169 @@ expression	: primary
 		| expression LSL   attribute_instances expression
 		| expression ASR   attribute_instances expression
 		| expression ASL   attribute_instances expression
-		| conditional_expression
-		| string
+		| expression TERNARY attribute_instances expression COLON expression
+		| identifier
 		;
 
 mintypmax_expression: expression
 		| expression COLON expression COLON expression
 		;
 
-module_path_conditional_expression: module_path_expression TERNARY 
-			attribute_instances module_path_expression
-  			COLON module_path_expression
+#module_path_conditional_expression: module_path_expression TERNARY 
+#			attribute_instances module_path_expression
+#  			COLON module_path_expression
+#		;
+
+#module_path_expression: module_path_primary
+#		| unary_module_path_operator attribute_instances module_path_primary
+#		| module_path_expression binary_module_path_operator 
+#			attribute_instances module_path_expression
+#		| module_path_conditional_expression
+#		;
+
+#module_path_mintypemax_expression: module_path_expression
+#		| module_path_expression COLON module_path_expression COLON
+#			module_path_expression
+#		;
+
+constant_range_expression : constant_expression
+		| constant_part_select_range
 		;
 
-module_path_expression: module_path_primary
-		| unary_module_path_operator attribute_instances module_path_primary
-		| module_path_expression binary_module_path_operator 
-			attribute_instances module_path_expression
-		| module_path_conditional_expression
+constant_part_select_range : constant_range
+		| constant_indexed_range
 		;
 
-module_path_mintypemax_expression: module_path_expression
-		| module_path_expression COLON module_path_expression COLON
-			module_path_expression
+constant_part_select_range_o : /* empty */
+		| constant_part_select_range
+		;
+		
+constant_range  : constant_expression COLON constant_expression
+		;
+			  
+constant_indexed_range : constant_expression PLUS COLON constant_expression
+		| constant_expression MINUS COLON constant_expression
+
+part_select_range: constant_range
+ 		| indexed_range
 		;
 
-range_expression: expression
-		| expression COLON constant_expression
-		| expression IDX_PRT_SEL constant_expression %prec IDX_PRT_SEL
-		;
+indexed_range 	: expression PLUS COLON constant_expression
+	       	| expression MINUS COLON constant_expression
 
-/* A.8.4 Primaries */
 
-constant_primary: constant_concatenation
-		| constant_function_call
-		| OPEN_BRACKET constant_mintypmax_expression CLOSE_BRACKET
-		| constant_multiple_concatenation
-		| genvar_identifier
-		| number
-		| parameter_identifier
-		| specparam_identifier
-		| text_macro_usage
-		;
 
-primary		: number
-		| function_call
-		| hierarchical_identifier constant_function_call_pid
-		| SIMPLE_ID constant_function_call_pid
-		| system_function_call
-		| hierarchical_identifier sq_bracket_expressions
-		| hierarchical_identifier sq_bracket_expressions OPEN_SQ_BRACKET
-  			range_expression CLOSE_SQ_BRACKET
+#/* A.8.4 Primaries */
+
+constant_primary: primary_literal
+		| concatenation
+#		| constant_function_call
+#		| OPEN_PAREN constant_mintypmax_expression CLOSE_PAREN
+#		| constant_multiple_concatenation
+#		| genvar_identifier
+#		| number
+#		| parameter_identifier
+#		| specparam_identifier
+#		| text_macro_usage
+#		;
+
+primary		: primary_literal
+		| hierarchical_identifier
+#		| identifier_options_o hierarchical_identifier
+#		| identifier_options_o hierarchical_identifier select
 		| concatenation
 		| multiple_concatenation
-		| hierarchical_identifier
-		| OPEN_BRACKET mintypmax_expression CLOSE_BRACKET
-		| text_macro_usage
+#		| function_call
+#		| SIMPLE_ID constant_function_call_pid
+#		| system_function_call
+		| OPEN_PAREN mintypmax_expression CLOSE_PAREN
+#		| text_macro_usage
+		| KW_THIS
+		| KW_DOLLAR_SIGN
+		| KW_NULL
+#		;
+
+
+identifier_options_o : implicit_class_handle_dot
+#		| class_scope
+		| package_scope
 		;
 
-module_path_primary: number
-		| identifier
-		| module_path_concatenation
-		| module_path_multiple_concatenation
-		| function_call
-		| system_function_call
-		| constant_function_call
-		| OPEN_BRACKET module_path_mintypemax_expression CLOSE_BRACKET
-		| text_macro_usage
+
+time_literal	: unsigned_number time_unit
+	     	| fixed_point_number time_unit
 		;
+
+time_unit	: KW_TIMEUNITS
+		| KW_STEP
+		;
+
+#implicit_class_handle : KW_THIS
+#		| KW_SUPER
+#		| KW_THIS DOT KW_SUPER
+#		;
+
+implicit_class_handle_dot : KW_THIS DOT
+		| KW_SUPER DOT
+		| KW_THIS DOT KW_SUPER DOT
+		;
+
+#module_path_primary: number
+#		| identifier
+#		| module_path_concatenation
+#		| module_path_multiple_concatenation
+#		| function_call
+#		| system_function_call
+#		| constant_function_call
+#		| OPEN_PAREN module_path_mintypemax_expression CLOSE_PAREN
+#		| text_macro_usage
+#		;
+
+primary_literal	: number
+		| QSTRING 
+		;
+
+bit_select	: OPEN_SQ_BRACKET expression CLOSE_SQ_BRACKET 
+	   	;
+
+bit_select_list	: bit_select
+	     	| bit_select_list bit_select
+		;
+
+bit_select_o	: /* empty */
+	     	| bit_select_list
+		;
+
+select		: bit_select_list 
+		| OPEN_SQ_BRACKET part_select_range CLOSE_SQ_BRACKET
+		;
+
+constant_bit_select : OPEN_SQ_BRACKET constant_expression CLOSE_SQ_BRACKET
+
+constant_bit_select_list : constant_bit_select
+		| constant_bit_select_list constant_bit_select 
+		;
+
+constant_select : constant_bit_select 
+		| constant_bit_select constant_part_select_range
+		;
+
+
 
 /* A.8.5 Expression left-side values */
 
-sq_bracket_constant_expressions: OPEN_SQ_BRACKET constant_expression CLOSE_SQ_BRACKET
-		| OPEN_SQ_BRACKET constant_expression CLOSE_SQ_BRACKET 
-			sq_bracket_constant_expressions
-		;
+net_lvalue 	: ps_or_hierarchical_net_identifier
 
-net_lvalue 	: hierarchical_net_identifier
-		| hierarchical_net_identifier sq_bracket_constant_expressions
-		| hierarchical_net_identifier sq_bracket_constant_expressions 
-  			OPEN_SQ_BRACKET constant_range_expression CLOSE_SQ_BRACKET
-		| hierarchical_net_identifier OPEN_SQ_BRACKET constant_range_expression
-  			CLOSE_SQ_BRACKET
-		| net_concatenation
-		;
+#variable_lvalue : hierarchical_variable_identifier
+#		| hierarchical_variable_identifier sq_bracket_constant_expressions
+#		| hierarchical_variable_identifier sq_bracket_constant_expressions 
+#  			OPEN_SQ_BRACKET constant_range_expression CLOSE_SQ_BRACKET
+#		| hierarchical_variable_identifier OPEN_SQ_BRACKET constant_range_expression
+#  			CLOSE_SQ_BRACKET
+#		| variable_concatenation
+#		;
 
-variable_lvalue : hierarchical_variable_identifier
-		| hierarchical_variable_identifier sq_bracket_constant_expressions
-		| hierarchical_variable_identifier sq_bracket_constant_expressions 
-  			OPEN_SQ_BRACKET constant_range_expression CLOSE_SQ_BRACKET
-		| hierarchical_variable_identifier OPEN_SQ_BRACKET constant_range_expression
-  			CLOSE_SQ_BRACKET
-		| variable_concatenation
-		;
-
-/* A.8.6 Operators */
+#/* A.8.6 Operators */
 
 unary_operator	: PLUS
 		| MINUS
@@ -2110,32 +2461,39 @@ unary_operator	: PLUS
 		;
 
 
-unary_module_path_operator: L_NEG
-		| B_NEG
-		| B_AND
-		| B_NAND
-		| B_OR
-		| B_NOR
-		| B_XOR
-		| B_EQU
+#unary_module_path_operator: L_NEG
+#		| B_NEG
+#		| B_AND
+#		| B_NAND
+#		| B_OR
+#		| B_NOR
+#		| B_XOR
+#		| B_EQU
+#		;
+
+#binary_module_path_operator: L_EQ
+#		| L_NEQ
+#		| L_AND
+#		| L_OR
+#		| B_AND
+#		| B_OR
+#		| B_XOR
+#		| B_EQU
+#		;
+
+#/* A.8.7 Numbers */
+
+number 		: integer_number
+	 	| NUM_REAL /* real_number */
 		;
 
-binary_module_path_operator: L_EQ
-		| L_NEQ
-		| L_AND
-		| L_OR
-		| B_AND
-		| B_OR
-		| B_XOR
-		| B_EQU
+integer_number	: decimal_number
+	       	| OCT_VALUE /* octal_number */
+		| BIN_VALUE /* binary_number */
+		| HEX_VALUE /* hex_number */
 		;
 
-/* A.8.7 Numbers */
-
-unsigned_number : UNSIGNED_NUMBER
-		;
-
-number 		: NUM_REAL
+decimal_number	: unsigned_number
 		| BIN_BASE BIN_VALUE
 		| HEX_BASE HEX_VALUE
 		| OCT_BASE OCT_VALUE
@@ -2144,27 +2502,34 @@ number 		: NUM_REAL
 		| UNSIGNED_NUMBER HEX_BASE HEX_VALUE
 		| UNSIGNED_NUMBER OCT_BASE OCT_VALUE
 		| UNSIGNED_NUMBER DEC_BASE UNSIGNED_NUMBER
-		| unsigned_number
+		;
+
+unsigned_number : UNSIGNED_NUMBER
 		;
 
 
-/* A.8.8 Strings */
+fixed_point_number : NUM_REAL
+		;
 
-string 		: STRING
+
+#/* A.8.8 Strings */
+
+qstring 	: QSTRING
 	 	;
 
 /* A.9.1 Attributes */
 
-attribute_instances: /* empty */
+attribute_instances: /* empty */ 
 		| list_of_attribute_instances
 		;
 
-list_of_attribute_instances: ATTRIBUTE_START attr_specs ATTRIBUTE_END
-		| attribute_instances ATTRIBUTE_START attr_specs ATTRIBUTE_END
+list_of_attribute_instances: attribute_instance
+		| list_of_attribute_instances attribute_instance
 		;
 
-attr_specs 	: /* empty */
-		| attr_spec
+attribute_instance: ATTRIBUTE_START attr_specs ATTRIBUTE_END
+
+attr_specs 	: attr_spec
 		| attr_specs COMMA attr_spec
 		;
 
@@ -2177,199 +2542,176 @@ attr_name 	: identifier
 
 /* A.9.2 Comments */
 
-/* These are supported in the LEX
-comment		: one_line_comment
-		| block_comment
-		;
+#/* These are supported in the LEX
+#comment		: one_line_comment
+#		| block_comment
+#		;
 
-one_line_comment: COMMENT_LINE
-		;
+#one_line_comment: COMMENT_LINE
+#		;
 
-block_comment	: COMMENT_BLOCK
+#block_comment	: COMMENT_BLOCK
 
-*/
-		;
+#*/
+#		;
 
 /* A.9.3 Identifiers */
 
-escaped_arrayed_identifier: escaped_identifier range_o
-		;
+# escaped_arrayed_identifier: escaped_identifier 
+# 		| escaped_identifier range
+# 		;
 
-escaped_hierarchical_identifier : escaped_hierarchical_branch escaped_hierarchical_identifiers
-		| escaped_hierarchical_branch
-		;
+# escaped_hierarchical_identifier : escaped_hierarchical_branch escaped_hierarchical_identifiers
+# 		| escaped_hierarchical_branch
+# 		;
 
-escaped_hierarchical_identifiers: DOT simple_hierarchical_identifier
-		| DOT escaped_hierarchical_identifier
-		| escaped_hierarchical_identifiers DOT simple_hierarchical_identifier
-		| escaped_hierarchical_identifier DOT escaped_hierarchical_identifiers
-		;
+# escaped_hierarchical_identifiers: DOT simple_hierarchical_identifier
+#		| DOT escaped_hierarchical_identifier
+#		| escaped_hierarchical_identifiers DOT simple_hierarchical_identifier
+#		| escaped_hierarchical_identifier DOT escaped_hierarchical_identifiers
+#		;
 
-anys 		: anys ANY
-		| ANY 
-     		;
+#anys 		: anys ANY
+#		| ANY 
+#     		;
 
 
 arrayed_identifier: simple_arrayed_identifier
-		| escaped_arrayed_identifier
+#		| escaped_arrayed_identifier
+#		;
+
+hierarchical_identifier : SVID
+		| KW_ROOT SVID
+		| hierarchical_identifier_sub
+		| KW_ROOT hierarchical_identifier_sub
 		;
 
-
-hierarchical_identifier: simple_hierarchical_identifier
-		| escaped_hierarchical_identifier
+hierarchical_identifier_sub : SVID DOT SVID
+		| hierarchical_identifier_sub DOT SVID
 		;
 
-hierarchical_net_identifier: hierarchical_identifier
-		;	
+#hierarchical_variable_identifier: hierarchical_identifier
+#		;	
 
-hierarchical_variable_identifier: hierarchical_identifier
-		;	
+#hierarchical_task_identifier    : hierarchical_identifier
+#		;	
 
-hierarchical_task_identifier    : hierarchical_identifier
-		;	
+#hierarchical_block_identifier   : hierarchical_identifier
+#		;	
 
-hierarchical_block_identifier   : hierarchical_identifier
-		;	
+#hierarchical_event_identifier   : hierarchical_identifier
+#		;	
 
-hierarchical_event_identifier   : hierarchical_identifier
-		;	
+#hierarchical_function_identifier: hierarchical_identifier
+#		;	
 
-hierarchical_function_identifier: hierarchical_identifier
-		;	
-
-gate_instance_identifier        : arrayed_identifier
-		;	
+#gate_instance_identifier        : arrayed_identifier
+#		;	
 
 module_instance_identifier      : arrayed_identifier
 		;	
 
-udp_instance_identifier         : arrayed_identifier
+#udp_instance_identifier         : arrayed_identifier
+#		;	
+
+#block_identifier                : identifier 
+#		;	
+
+#cell_identifier                 : identifier 
+#		;	
+
+#config_identifier               : identifier 
+#		;	
+
+#event_identifier                : identifier 
+#		;	
+
+#function_identifier             : identifier 
+#		;	
+
+#generate_block_identifier       : identifier 
+#		;	
+
+#genvar_identifier               : identifier 
+#		;	
+
+#inout_port_identifier           : identifier 
+#		;	
+
+#input_port_identifier           : identifier 
+#		;	
+
+#instance_identifier             : identifier 
+#		;	
+
+#library_identifier              : identifier 
+#		;	
+
+module_identifier: identifier 
 		;	
 
-block_identifier                : identifier 
-		;	
+# net_identifier_dimensions:	identifier
+# 		| identifier dimensions
+			 	
 
-cell_identifier                 : identifier 
-		;	
+#output_port_identifier		: identifier 
+#		;	
 
-config_identifier               : identifier 
-		;	
+#specparam_identifier		: identifier 
+#		;	
 
-event_identifier                : identifier 
-		;	
+#task_identifier			: identifier 
+#		;	
 
-function_identifier             : identifier 
-		;	
+#topmodule_identifier            : identifier 
+#		;	
 
-generate_block_identifier       : identifier 
-		;	
+#udp_identifier                  : identifier 
+#		;	
 
-genvar_identifier               : identifier 
-		;	
+#variable_identifier             : identifier 
+#		;	
 
-inout_port_identifier           : identifier 
-		;	
+package_identifier : identifier COLON COLON
+		   ;
 
-input_port_identifier           : identifier 
-		;	
-
-instance_identifier             : identifier 
-		;	
-
-library_identifier              : identifier 
-		;	
-
-module_identifier               : identifier 
-		;	
-
-net_identifier	: identifier 
-		| hierarchical_identifier
-		;
-
-output_port_identifier		: identifier 
-		;	
-
-specparam_identifier		: identifier 
-		;	
-
-task_identifier			: identifier 
-		;	
-
-topmodule_identifier            : identifier 
-		;	
-
-udp_identifier                  : identifier 
-		;	
-
-variable_identifier             : identifier 
-		;	
+package_scope :	package_identifier
+		| KW_UNIT COLON COLON
 
 parameter_identifier            : identifier 
+#		| hierarchical_identifier
+#		;
+
+port_identifier	: identifier
+		;
+
+ps_or_hierarchical_net_identifier : package_scope identifier 
 		| hierarchical_identifier
 		;
 
-port_identifier	: identifier 
+#real_identifier	: identifier 
+#		;
+
+identifier 	: SIMPLE_ID
+		| ESCAPED_ID 
 		;
 
-real_identifier	: identifier 
+simple_arrayed_identifier : SIMPLE_ID
+#		| SIMPLE_ID range
 		;
 
-identifier 	: simple_identifier
-		| escaped_identifier
-		| text_macro_usage 
+#system_function_identifier: SYSTEM_ID
+#		;
+
+#system_task_identifier: SYSTEM_ID
 		;
 
-simple_identifier: SIMPLE_ID
-		| text_macro_usage
-		;
 
-escaped_identifier: ESCAPED_ID
-		;
-
-simple_arrayed_identifier : simple_identifier range_o
-		;
-
-simple_hierarchical_identifier  : simple_hierarchical_branch
-		| simple_hierarchical_branch DOT escaped_identifier
-		;
-
-system_function_identifier: SYSTEM_ID
-		;
-
-system_task_identifier: SYSTEM_ID
-		;
-
-/* A.9.4 Identifier Branches */
-
-/* Semantic checking needed to make sure that the "expression"
-in the closed brackets reduces to an "unsigned_number" */
-
-simple_hierarchical_branch : SIMPLE_ID
-		| SIMPLE_ID OPEN_SQ_BRACKET expression CLOSE_SQ_BRACKET
-		| SIMPLE_ID OPEN_SQ_BRACKET range_expression CLOSE_SQ_BRACKET
-		| simple_hierarchical_branch DOT simple_identifier
-		| simple_hierarchical_branch DOT SIMPLE_ID OPEN_SQ_BRACKET expression 
-  			CLOSE_SQ_BRACKET
-		| simple_hierarchical_branch DOT SIMPLE_ID OPEN_SQ_BRACKET range_expression
-  			CLOSE_SQ_BRACKET
-		;
-
-/* Semantic checking needed to make sure that the "expression"
-in the closed brackets reduces to an "unsigned_number" */
-
-escaped_hierarchical_branch : escaped_hierarchical_branch DOT escaped_identifier
-		| escaped_hierarchical_branch DOT escaped_identifier OPEN_SQ_BRACKET
-  			expression CLOSE_SQ_BRACKET 
-		| escaped_identifier
-		| escaped_identifier OPEN_SQ_BRACKET expression CLOSE_SQ_BRACKET
-		| escaped_identifier OPEN_SQ_BRACKET range_expression CLOSE_SQ_BRACKET
-		;
-
-/* This is handled in the LEX
-white_space 	: SPACE 
-	     	| TAB 
-		| NEWLINE
-		;
-*/
+#/* This is handled in the LEX
+#white_space 	: SPACE 
+#	     	| TAB 
+#		| NEWLINE
+#		;
+#*/
 
 %%

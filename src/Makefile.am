@@ -15,15 +15,14 @@ PUBLIC_HDRS = \
 
 libopen_sverilog_la_LDFLAGS = -version-info 1:0:0
 
-AM_LDFLAGS= -lm
-
 bin_PROGRAMS = testparser
 
 testparser_SOURCES = main.c
 
 testparser_LDADD = \
 		libopen_sverilog.la \
-		$(abs_top_srcdir)/lib/libutd.la
+		$(abs_top_srcdir)/lib/libutd.la \
+		-lm
 
 
 ACLOCAL_AMFLAGS=-I m4

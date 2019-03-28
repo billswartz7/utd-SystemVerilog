@@ -3,6 +3,7 @@
 @brief Contains function implementations to support source code preprocessing.
 */
 
+#include <sverilog_config.h>
 #include <verilog/sverilog.h>
 #include "preprocessor.h"
 #include <utd/file.h>
@@ -25,6 +26,7 @@ SVERILOG_PARSEPTR sverilog_parser_init(void)
     parse_p->macrodefines    = UTDhash_init(UTD_HASH_MIN_SIZE) ;
     parse_p->ifdefs          = UTDdeck_init() ;
     parse_p->search_dirs     = UTDhash_init(UTD_HASH_MIN_SIZE) ;
+    parse_p->last_file_name[LAST_FILE_LEN-1] = EOS ;
 
     // By default, search CWD for include files.
     UTDhash_insert( parse_p->search_dirs,"./", UTDstrclone("./") ) ;
@@ -67,17 +69,21 @@ int sverilog_parse_file( SVERILOG_PARSEPTR parse_p, char *filename )
       file_p->fp = UTDOPEN( file_p->filename,"r",FILE_NOABORT|FILE_VERBOSE ) ;
 
       if( file_p->fp ){
+	parse_p->file_name = file_p->filename ;
+	strncpy( parse_p->last_file_name, file_p->filename, LAST_FILE_LEN-1) ;
 	sverilog_set_in( file_p->fp ) ;
 	int status = ferror( file_p->fp ) ;
 	fprintf( stderr, "status:%d\n", status ) ;
 	new_buffer = sverilog__create_buffer( file_p->fp, YY_BUF_SIZE ) ;
 	sverilog__switch_to_buffer(new_buffer);
-	sverilog_lineno = 0 ; // Reset the global line counter, we are in a new file!
+	// Reset the global line counter, we are in a new file!
+	// Was: sverilog_lineno = 0 ;  No globals needed here
+	*(parse_p->line_num) = 1 ;
 	result = sverilog_parse( parse_p ) ;
       }
     }
 
-    return(0) ;
+    return(result) ;
 } /* end sverilog_parse_file() */
 
 
@@ -482,6 +488,20 @@ char *sverilog_new_identifier( SVERILOG_PARSEPTR parse_p,
 } /* end sverilog_new_identifier() */
 
 /*!
+@brief Set the expected expression identifier
+@details When activated this allows us to enable the more extensive
+lex tokenize state searching for expressions.   We do this to avoid
+having complex rules in the YACC grammar at the cost of possibly
+having a hierarchical grammar engine.
+*/
+void sverilog_expect_expression( SVERILOG_PARSEPTR parse_p, BOOL state )
+{
+    if( parse_p ){
+      parse_p->check_for_expression = state ;
+    }
+} /* end sverilog_expect_expression() */
+
+/*!
 @brief Registers a new default net type directive.
 @details Adds a record of the directive to the end of the linked list
 "net_types" in the global yy_preproc.
@@ -538,8 +558,29 @@ void verilog_pop_file_stack( SVERILOG_PARSEPTR parse_p )
 	UTDFREE( top_p ) ;
       }
     }
+    parse_p->file_name = NULL ;
 } /* end verilog_pop_file_stack() */
 
+const char *sverilog_line_start( const char *string )
+{
+  const char *start ;		/* start of line  */
+  for( start = string ; *start && *start != '\n' ; start-- ){
+    /* empty */
+  }
+  start++ ;
+  return( start ) ;
+} /* end sverilog_line_start() */
+
+int sverilog_show_position( const char *start, const char *msg )
+{
+   int pos ;
+   if( start && msg ){
+     pos = msg - start ;
+   } else {
+     pos = 0 ;
+   }
+   return( pos ) ;
+} /* end line_position() */
 
 #ifdef LATER
 

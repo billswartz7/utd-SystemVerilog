@@ -1,7 +1,7 @@
 %{
     #include <verilog/sverilog.h>
     #include "preprocessor.h"
-    #include "sverilog_tab.h"
+    #include "sverilog.tab.h"
     #include <utd/file.h>
     #include <utd/string.h>
 
@@ -30,6 +30,7 @@
 %option yylineno
 %option nodefault 
 %option noyywrap 
+%option reject 
 
 /* Pre-processor definitions */
 CD_DEFAULT_NETTYPE     "`default_nettype"
@@ -85,9 +86,11 @@ AND                 "and"
 ASSIGN              "assign"
 AUTOMATIC           "automatic"
 BEGIN               "begin"
+BIT                 "bit"
 BUF                 "buf"
 BUFIF0              "bufif0"
 BUFIF1              "bufif1"
+BYTE                "byte"
 CASE                "case"
 CASEX               "casex"
 CASEZ               "casez"
@@ -129,12 +132,15 @@ INITIAL             "initial"
 INOUT               "inout"
 INPUT               "input"
 INSTANCE            "instance"
+INT                 "int"
 INTEGER             "integer"
 JOIN                "join"
 LARGE               "large"
 LIBLIST             "liblist"
 LIBRARY             "library"
 LOCALPARAM          "localparam"
+LOGIC         	    "logic"
+LONGINT        	    "longint"
 MACROMODULE         "macromodule"
 MEDIUM              "medium"
 MODULE              "module"
@@ -171,6 +177,7 @@ RTRAN               "rtran"
 RTRANIF0            "rtranif0"
 RTRANIF1            "rtranif1"
 SCALARED            "scalared"
+SHORTINT            "shortint"
 SHOWCANCELLED       "showcancelled"
 SIGNED              "signed"
 SMALL               "small"
@@ -194,6 +201,7 @@ TRIOR               "trior"
 TRIREG              "trireg"
 UNSIGNED            "unsigned"
 USE                 "use"
+UWIRE               "uwire"
 VECTORED            "vectored"
 WAIT                "wait"
 WAND                "wand"
@@ -204,6 +212,18 @@ WIRE                "wire"
 WOR                 "wor"
 XNOR                "xnor"
 XOR                 "xor"
+
+/* System Verilog Keyword Token definitions. */
+NULL                "null"
+SUPER               "super"
+THIS                "this"
+TIMEPRECISION       "timeprecision"
+TIMEUNIT            "timeunit"
+ROOT                "$root."
+UNIT                "$unit"
+REF                 "ref"
+STEP                "step"
+STATIC              "static"
 
 /* Single character tokens */
 
@@ -219,12 +239,19 @@ EQ                  "="
 COLON               ":"
 IDX_PRT_SEL         "+:"|"-:"
 SEMICOLON           ";"
-OPEN_BRACKET        "\("
-CLOSE_BRACKET       "\)"
+OPEN_PAREN          "\("
+CLOSE_PAREN         "\)"
 OPEN_SQ_BRACKET     "\["
 CLOSE_SQ_BRACKET    "\]"
-OPEN_SQ_BRACE       "{"
-CLOSE_SQ_BRACE      "}"
+OPEN_CURLBRACE      "{"
+CLOSE_CURLBRACE     "}"
+DOLLAR_SIGN         "$"
+SECOND              "s"
+MILLISECOND         "ms"
+MICROSECOND         "us"
+NANOSECOND          "ns"
+PICOSECOND          "ps"
+FEMTOSECOND         "fs"
 
 
 /* Tokens related to numbers */
@@ -251,6 +278,7 @@ NUM_REAL_EXP        {NUM_UNSIGNED}({DOT}{NUM_UNSIGNED})?{EXP}({SIGN})?{NUM_UNSIG
 BIN_VALUE           {DIGIT_BINARY}({UNDERSCORE}|{DIGIT_BINARY})*
 OCT_VALUE           {DIGIT_OCTAL}({UNDERSCORE}|{DIGIT_OCTAL})*
 HEX_VALUE           {DIGIT_HEX}({UNDERSCORE}|{DIGIT_HEX})*
+ASTERISK            [*]
 
 %x in_hex_val
 %x in_oct_val
@@ -287,7 +315,7 @@ COMMENT_END         "*/"
 
 /* Strings */
 
-STRING              \".*\"
+QSTRING             \".*\"
 
 /* Operators */
 
@@ -322,6 +350,8 @@ B_NOR               "~|"
 TERNARY             "?"
 
 Space  	    	    [\n\r\t\b ]
+
+%x in_expression
 
 %%
 {ATTRIBUTE_START}      {EMIT_TOKEN(parse_p,ATTRIBUTE_START, "(*" );}
@@ -447,7 +477,7 @@ Space  	    	    [\n\r\t\b ]
 {CD_INCLUDE}             {
     BEGIN(in_include);
 }
-<in_include>{STRING}     {
+<in_include>{QSTRING}     {
     YY_BUFFER_STATE cur = YY_CURRENT_BUFFER;
 
     VERILOG_FILEPTR id_p = verilog_preprocessor_include( parse_p,yytext,yylineno) ;
@@ -480,7 +510,7 @@ Space  	    	    [\n\r\t\b ]
 {CD_LINE}                 {BEGIN(in_line_1);}
 <in_line_1>{INTEGER}      {BEGIN(in_line_2);}
 <in_line_1>{NUM_UNSIGNED} {BEGIN(in_line_2);}
-<in_line_2>{STRING}       {BEGIN(in_line_3);}
+<in_line_2>{QSTRING}      {BEGIN(in_line_3);}
 <in_line_3>{INTEGER}      {BEGIN(INITIAL);}
 <in_line_3>{NUM_UNSIGNED} {BEGIN(INITIAL);}
 
@@ -581,12 +611,12 @@ Space  	    	    [\n\r\t\b ]
 {COLON}                {EMIT_TOKEN(parse_p,COLON,":" );}
 {IDX_PRT_SEL}          {EMIT_TOKEN(parse_p,IDX_PRT_SEL,"+=" );}
 {SEMICOLON}            {EMIT_TOKEN(parse_p,SEMICOLON,";" );}
-{OPEN_BRACKET}         {EMIT_TOKEN(parse_p,OPEN_BRACKET,"(" );}
-{CLOSE_BRACKET}        {EMIT_TOKEN(parse_p,CLOSE_BRACKET,")" );}
+{OPEN_PAREN}           {EMIT_TOKEN(parse_p,OPEN_PAREN,"(" );}
+{CLOSE_PAREN}          {EMIT_TOKEN(parse_p,CLOSE_PAREN,")" );}
 {OPEN_SQ_BRACKET}      {EMIT_TOKEN(parse_p,OPEN_SQ_BRACKET,"[" );}
 {CLOSE_SQ_BRACKET}     {EMIT_TOKEN(parse_p,CLOSE_SQ_BRACKET,"]" );}
-{OPEN_SQ_BRACE}        {EMIT_TOKEN(parse_p,OPEN_SQ_BRACE,"{" );}
-{CLOSE_SQ_BRACE}       {EMIT_TOKEN(parse_p,CLOSE_SQ_BRACE,"}" );}
+{OPEN_CURLBRACE}       {EMIT_TOKEN(parse_p,OPEN_CURLBRACE,"{" );}
+{CLOSE_CURLBRACE}      {EMIT_TOKEN(parse_p,CLOSE_CURLBRACE,"}" );}
 {STAR}                 {sverilog_lval.operator=OPERATOR_STAR   ; EMIT_TOKEN(parse_p,STAR,"*" );}
 {PLUS}                 {sverilog_lval.operator=OPERATOR_PLUS   ; EMIT_TOKEN(parse_p,PLUS,"+" );}
 {MINUS}                {sverilog_lval.operator=OPERATOR_MINUS  ; EMIT_TOKEN(parse_p,MINUS,"-" );}
@@ -634,9 +664,11 @@ Space  	    	    [\n\r\t\b ]
 {ASSIGN}               {EMIT_TOKEN(parse_p,KW_ASSIGN,"assign");} 
 {AUTOMATIC}            {EMIT_TOKEN(parse_p,KW_AUTOMATIC,"automatic");} 
 {BEGIN}                {EMIT_TOKEN(parse_p,KW_BEGIN,"begin");} 
+{BIT}                  {EMIT_SVTOKEN(parse_p,KW_BIT,"bit");} 
 {BUF}                  {EMIT_TOKEN(parse_p,KW_BUF,"buf");} 
 {BUFIF0}               {EMIT_TOKEN(parse_p,KW_BUFIF0,"bufif0");} 
 {BUFIF1}               {EMIT_TOKEN(parse_p,KW_BUFIF1,"bufif1");} 
+{BYTE}                 {EMIT_SVTOKEN(parse_p,KW_BYTE,"byte");} 
 {CASE}                 {EMIT_TOKEN(parse_p,KW_CASE,"case");} 
 {CASEX}                {EMIT_TOKEN(parse_p,KW_CASEX,"casex");} 
 {CASEZ}                {EMIT_TOKEN(parse_p,KW_CASEZ,"casez");} 
@@ -679,11 +711,14 @@ Space  	    	    [\n\r\t\b ]
 {INPUT}                {EMIT_TOKEN(parse_p,KW_INPUT,"input");} 
 {INSTANCE}             {EMIT_TOKEN(parse_p,KW_INSTANCE,"instance");} 
 {INTEGER}              {EMIT_TOKEN(parse_p,KW_INTEGER,"integer");} 
+{INT}                  {EMIT_SVTOKEN(parse_p,KW_INT,"int");} 
 {JOIN}                 {EMIT_TOKEN(parse_p,KW_JOIN,"join");} 
 {LARGE}                {EMIT_TOKEN(parse_p,KW_LARGE,"large");} 
 {LIBLIST}              {EMIT_TOKEN(parse_p,KW_LIBLIST,"liblist");} 
 {LIBRARY}              {EMIT_TOKEN(parse_p,KW_LIBRARY,"library");} 
 {LOCALPARAM}           {EMIT_TOKEN(parse_p,KW_LOCALPARAM,"localparam");} 
+{LOGIC}                {EMIT_SVTOKEN(parse_p,KW_LOGIC,"logic");} 
+{LONGINT}              {EMIT_SVTOKEN(parse_p,KW_LONGINT,"longint");} 
 {MACROMODULE}          {EMIT_TOKEN(parse_p,KW_MACROMODULE,"macromodule");} 
 {MEDIUM}               {EMIT_TOKEN(parse_p,KW_MEDIUM,"medium");} 
 {MODULE}               {EMIT_TOKEN(parse_p,KW_MODULE,"module");} 
@@ -695,6 +730,7 @@ Space  	    	    [\n\r\t\b ]
 {NOT}                  {EMIT_TOKEN(parse_p,KW_NOT,"not");} 
 {NOTIF0}               {EMIT_TOKEN(parse_p,KW_NOTIF0,"notif0");} 
 {NOTIF1}               {EMIT_TOKEN(parse_p,KW_NOTIF1,"notif1");} 
+{NULL}                 {EMIT_SVTOKEN(parse_p,KW_NULL,"null");} 
 {OR}                   {EMIT_TOKEN(parse_p,KW_OR,"or");} 
 {OUTPUT}               {EMIT_TOKEN(parse_p,KW_OUTPUT,"output");} 
 {PARAMETER}            {EMIT_TOKEN(parse_p,KW_PARAMETER,"parameter");} 
@@ -710,6 +746,7 @@ Space  	    	    [\n\r\t\b ]
 {RCMOS}                {EMIT_TOKEN(parse_p,KW_RCMOS,"rcmos");} 
 {REAL}                 {EMIT_TOKEN(parse_p,KW_REAL,"real");} 
 {REALTIME}             {EMIT_TOKEN(parse_p,KW_REALTIME,"realtime");} 
+{REF}   	       {EMIT_SVTOKEN(parse_p,KW_REF,"ref");} 
 {REG}                  {EMIT_TOKEN(parse_p,KW_REG,"reg");} 
 {RELEASE}              {EMIT_TOKEN(parse_p,KW_RELEASE,"release");} 
 {REPEAT}               {EMIT_TOKEN(parse_p,KW_REPEAT,"repeat");} 
@@ -719,6 +756,7 @@ Space  	    	    [\n\r\t\b ]
 {RTRANIF0}             {EMIT_TOKEN(parse_p,KW_RTRANIF0,"rtranif0");} 
 {RTRANIF1}             {EMIT_TOKEN(parse_p,KW_RTRANIF1,"rtranif1");} 
 {SCALARED}             {EMIT_TOKEN(parse_p,KW_SCALARED,"scalared");} 
+{SHORTINT}             {EMIT_SVTOKEN(parse_p,KW_SHORTINT,"shortint");} 
 {SHOWCANCELLED}        {EMIT_TOKEN(parse_p,KW_SHOWCANCELLED,"showcancelled");} 
 {SIGNED}               {EMIT_TOKEN(parse_p,KW_SIGNED,"signed");} 
 {SMALL}                {EMIT_TOKEN(parse_p,KW_SMALL,"small") ;} 
@@ -726,11 +764,15 @@ Space  	    	    [\n\r\t\b ]
 {SPECPARAM}            {EMIT_TOKEN(parse_p,KW_SPECPARAM,"specparam");} 
 {STRONG0}              {EMIT_TOKEN(parse_p,KW_STRONG0,"strong0");} 
 {STRONG1}              {EMIT_TOKEN(parse_p,KW_STRONG1,"strong1");} 
+{SUPER}                {EMIT_SVTOKEN(parse_p,KW_SUPER,"super");} 
 {SUPPLY0}              {EMIT_TOKEN(parse_p,KW_SUPPLY0,"supply0");} 
 {SUPPLY1}              {EMIT_TOKEN(parse_p,KW_SUPPLY1,"supply1");} 
 {TABLE}                {EMIT_TOKEN(parse_p,KW_TABLE,"table");} 
 {TASK}                 {EMIT_TOKEN(parse_p,KW_TASK,"task");} 
+{THIS}                 {EMIT_SVTOKEN(parse_p,KW_THIS,"this");} 
 {TIME}                 {EMIT_TOKEN(parse_p,KW_TIME,"time");} 
+{TIMEPRECISION}        {EMIT_SVTOKEN(parse_p,KW_TIMEPRECISION,"timeprecision");} 
+{TIMEUNIT}             {EMIT_SVTOKEN(parse_p,KW_TIMEUNIT,"timeunit");} 
 {TRAN}                 {EMIT_TOKEN(parse_p,KW_TRAN,"tran");} 
 {TRANIF0}              {EMIT_TOKEN(parse_p,KW_TRANIF0,"tranif0");} 
 {TRANIF1}              {EMIT_TOKEN(parse_p,KW_TRANIF1,"tranif1");} 
@@ -741,6 +783,7 @@ Space  	    	    [\n\r\t\b ]
 {TRIREG}               {EMIT_TOKEN(parse_p,KW_TRIREG,"trireg");} 
 {TRI}                  {EMIT_TOKEN(parse_p,KW_TRI,"tri");} 
 {UNSIGNED}             {EMIT_TOKEN(parse_p,KW_UNSIGNED,"unsigned");} 
+{UWIRE}                {EMIT_TOKEN(parse_p,KW_UWIRE,"uwire");} 
 {USE}                  {EMIT_TOKEN(parse_p,KW_USE,"use");} 
 {VECTORED}             {EMIT_TOKEN(parse_p,KW_VECTORED,"vectored");} 
 {WAIT}                 {EMIT_TOKEN(parse_p,KW_WAIT,"wait");} 
@@ -753,24 +796,59 @@ Space  	    	    [\n\r\t\b ]
 {XNOR}                 {EMIT_TOKEN(parse_p,KW_XNOR,"xnor");} 
 {XOR}                  {EMIT_TOKEN(parse_p,KW_XOR,"xor");} 
 
+{ASTERISK}	       {EMIT_SVTOKEN(parse_p,KW_ASTERISK,"*");}
+{DOLLAR_SIGN}          {EMIT_TOKEN(parse_p,KW_DOLLAR_SIGN,"$");} 
+{TIME_UNITS}           {EMIT_SVTOKEN(parse_p,KW_TIMEUNITS,"time_units");}
+{STATIC}               {EMIT_SVTOKEN(parse_p,KW_STEP,"static");}
+{STEP}                 {EMIT_SVTOKEN(parse_p,KW_STEP,"step");}
+{UNIT}                 {EMIT_SVTOKEN(parse_p,KW_UNIT,"$unit");}
+
 {SYSTEM_ID}            {
     sverilog_lval.identifier = sverilog_new_identifier(parse_p,yytext,yylineno); 
     EMIT_TOKEN(parse_p,SYSTEM_ID,NULL);
 }
-{ESCAPED_ID}           {
+
+<in_expression>\[[0-9]*\] {
+    BEGIN(INITIAL) ;
+    fprintf( stderr, "we found an expression\n" ) ;
     sverilog_lval.identifier = sverilog_new_identifier(parse_p,yytext,yylineno); 
-    EMIT_TOKEN(parse_p,ESCAPED_ID,NULL);
+    EMIT_TOKEN(parse_p,SVID,NULL);
+}
+<in_expression>\[[0-9:]*\] {
+    BEGIN(INITIAL) ;
+    fprintf( stderr, "we found a range expression\n" ) ;
+    sverilog_lval.identifier = sverilog_new_identifier(parse_p,yytext,yylineno); 
+    EMIT_TOKEN(parse_p,SVID,NULL);
+}
+<in_expression>[^\[] {
+    BEGIN(INITIAL) ;
+    unput(yytext[0]) ;
+    EMIT_TOKEN(parse_p,SVID,NULL);
+}
+
+{ESCAPED_ID}           {
+    if( parse_p->check_for_expression ){
+      BEGIN(in_expression) ;
+    } else {
+      sverilog_lval.identifier = sverilog_new_identifier(parse_p,yytext,yylineno); 
+      EMIT_TOKEN(parse_p,ESCAPED_ID,NULL);
+    }
 }
 {SIMPLE_ID}            {
-    sverilog_lval.identifier = sverilog_new_identifier(parse_p,yytext,yylineno); 
-    EMIT_TOKEN(parse_p,SIMPLE_ID,NULL);
+    if( parse_p->check_for_expression ){
+      fprintf( stderr, "checking line:%d when we have:%s\n", yylineno, yytext ) ;
+      BEGIN(in_expression) ;
+    } else {
+      sverilog_lval.identifier = sverilog_new_identifier(parse_p,yytext,yylineno); 
+      EMIT_TOKEN(parse_p,SIMPLE_ID,NULL);
+    }
 }
 
-{STRING}               {sverilog_lval.string = yytext;EMIT_TOKEN(parse_p,STRING,NULL);}
+{QSTRING}              {sverilog_lval.string = yytext;EMIT_TOKEN(parse_p,QSTRING,NULL);}
 
-<*>{NEWLINE}              { verilog_preproc(parse_p,NEWLINE,"\n") ;/* IGNORE */ }
-<*>{SPACE}                { verilog_preproc(parse_p,SPACE," " ) ;  /* IGNORE */ }
-<*>{TAB}                  { verilog_preproc(parse_p,TAB, "\t");    /* IGNORE */ }
+<*>{NEWLINE}           { verilog_preproc(parse_p,NEWLINE,"\n") ;/* IGNORE */ }
+<*>{SPACE}             { verilog_preproc(parse_p,SPACE," " ) ;  /* IGNORE */ }
+<*>{TAB}               { verilog_preproc(parse_p,TAB, "\t");    /* IGNORE */ }
 
 <<EOF>> {
 

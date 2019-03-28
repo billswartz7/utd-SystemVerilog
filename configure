@@ -633,6 +633,7 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 MCC
+UTDLIB_AUTOTOOLS
 LIBOBJS
 OPENROAD_THREAD_BUILD
 CXXCPP
@@ -769,6 +770,8 @@ with_gnu_ld
 with_sysroot
 enable_libtool_lock
 enable_threads
+with_utdlib
+enable_autotools
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1415,6 +1418,7 @@ Optional Features:
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --enable-threads        build libraries with threads (default: off)
   --enable-shared         build and link with shared libraries (default: on)
+  --enable-autotools      rebuild Makefiles with autotools (default: off)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1427,6 +1431,7 @@ Optional Packages:
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
   --with-sysroot[=DIR]    Search for dependent libraries within DIR (or the
                           compiler's sysroot if not specified).
+  --with-utdlib           directory containing the UTD common library (libutd)
 
 Some influential environment variables:
   CC          C compiler command
@@ -15825,6 +15830,45 @@ $as_echo "#define OPENROAD_STATIC_BUILD 1" >>confdefs.h
     fi
 
 
+# See if we have defined the UTD path
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UTD common library path" >&5
+$as_echo_n "checking for UTD common library path... " >&6; }
+
+# Check whether --with-utdlib was given.
+if test "${with_utdlib+set}" = set; then :
+  withval=$with_utdlib; with_utdlib="${withval}"
+fi
+
+    if ${ac_cv_c_utdlib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+
+	# First check to see if --with-utdlib was specified.
+	if test x"${with_utdlib}" != x ; then
+	    if test -f "${with_utdlib}/include/utd/config.h" ; then
+		ac_cv_c_utdlib="`(cd "${with_utdlib}"; pwd)`"
+	    else
+		as_fn_error $? "${with_utdlib} directory doesn't contain utd/config.h" "$LINENO" 5
+	    fi
+	fi
+
+
+fi
+
+
+    if test x"${ac_cv_c_utdlib}" = x ; then
+	UTDLIB_ROOT_DIR="# no Tcl configs found"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Can't find UTD configuration definitions. Use --with-utdlib to specify a directory containing libutd" >&5
+$as_echo "Can't find UTD configuration definitions. Use --with-utdlib to specify a directory containing libutd" >&6; }
+    else
+	UTDLIB_ROOT_DIR="${ac_cv_c_utdlib}"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: found ${UTDLIB_ROOT_DIR}/include/utd/config.h" >&5
+$as_echo "found ${UTDLIB_ROOT_DIR}/include/utd/config.h" >&6; }
+    fi
+
+
 # Checks for header files.
 for ac_header in stdlib.h
 do :
@@ -16131,6 +16175,46 @@ _ACEOF
 
 fi
 done
+
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use autotools to regenerate Makefiles" >&5
+$as_echo_n "checking whether to use autotools to regenerate Makefiles... " >&6; }
+    # Check whether --enable-autotools was given.
+if test "${enable_autotools+set}" = set; then :
+  enableval=$enable_autotools; utdautotools_ok=$enableval
+else
+  utdautotools_ok=no
+fi
+
+
+    if test "${enable_autotools+set}" = set; then
+	enableval="$enable_autotools"
+	utdautotools_ok=$enableval
+    else
+	utdautotools_ok=no
+    fi
+
+    if test "$utdautotools_ok" = "yes" ; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: autotools enabled" >&5
+$as_echo "autotools enabled" >&6; }
+	UTDLIB_AUTOTOOLS="--enable-autotools"
+    else
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: autotools disabled" >&5
+$as_echo "autotools disabled" >&6; }
+	ACLOCAL="echo no aclocal mode"
+	AUTOCONF="echo no autoconf mode"
+	AUTOHEADER="echo no autoheader mode"
+	AUTOMAKE="echo no automake mode"
+	MAKEINFO="echo no makeinfo mode"
+	UTDLIB_AUTOTOOLS="--disable-autotools"
+    fi
+
+
+
+
+
+
 
 
 # Extract the first word of "imcc", so it can be a program name with args.

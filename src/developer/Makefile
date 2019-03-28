@@ -1,7 +1,8 @@
 LEX=flex -v -d -P sverilog_ -o lex.yy.c
 LEX=flex -v -P sverilog_ -o lex.yy.c
 YACC=bison -p sverilog_
-YACC=byacc -b sverilog -p sverilog_
+YACC=twbison -c -p sverilog_
+YACC=byacc -c -b sverilog -p sverilog_
 RM=rm -f
 MV=mv
 GREP=grep
@@ -15,7 +16,7 @@ all: ../sverilog_parser.c ../sverilog_scanner.c
 	$(MV) sverilog.tab.c ../sverilog_parser.c
 	$(MV) sverilog.tab.h tmp
 	$(GREP) -v "# line" tmp | $(GREP) -v "#line" > sverilog.tab.h
-	$(MV) sverilog.tab.h ../sverilog_tab.h
+	$(MV) sverilog.tab.h ../sverilog.tab.h
 
 ../sverilog_scanner.c : sverilog.l
 	$(LEX) sverilog.l
@@ -28,7 +29,7 @@ clean:
 
 
 distclean : clean	
-	$(RM) ../sverilog_parser.c ../sverilog_tab.h ../sverilog_scanner.c
+	$(RM) ../sverilog_parser.c ../sverilog.tab.h ../sverilog_scanner.c
 
 :
 

@@ -42,7 +42,7 @@ module fpu_div (
 	inq_in2_exp_eq_0,
 	inq_in2_exp_neq_ffs,
 	inq_div,
-	div_dest_rdy,
+	eiv_dest_rdy,
 	fdiv_clken_l,
 	fdiv_clken_l_div_exp_buf1,
 	arst_l,

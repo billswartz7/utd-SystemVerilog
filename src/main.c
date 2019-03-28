@@ -3,8 +3,11 @@
 @brief A simple test program for the C library code.
 */
 
+#include <sverilog_config.h>
 #include "stdio.h"
-
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
 #include <verilog/parse.h>
 #include <utd/base.h>
 #include <utd/file.h>
@@ -12,6 +15,8 @@
 int main(int argc, char ** argv)
 {
     int fcount ;		/* file counter */
+    int result ;		/* last result */
+    SVERILOG_OPTIONS_T options ;/* options to the parser */
     FILE *pre_output_p ;	/* preprocessor output file */
     char preproc_file[LRECL] ;	/* build a file name */
 
@@ -20,8 +25,11 @@ int main(int argc, char ** argv)
         return 1;
     } else {
 
+      result = 0 ;
+
       // Initialise the parser.
-      SVERILOG_PARSEPTR parse_p = sverilog_parser_init() ;
+      options = SVERILOG_OPTION_NONE_T ;
+      SVERILOG_PARSEPTR parse_p = sverilog_parser_init( options ) ;
 
       // Setup the order to search for Verilog include files
       sverilog_parser_add_search_path( parse_p, "./tests/" ) ;
@@ -44,7 +52,7 @@ int main(int argc, char ** argv)
 	sverilog_parser_set_preprocess_output( parse_p, pre_output_p ) ;
 
 	// Parse the file and store the result.
-	int result = sverilog_parse_file( parse_p, filename ) ;
+	result = sverilog_parse_file( parse_p, filename ) ;
 
 	if( pre_output_p ){
 	  UTDCLOSE( pre_output_p ) ;
@@ -63,5 +71,6 @@ int main(int argc, char ** argv)
         }
       }
     }
+    exit( result ) ;
     return (0) ;
 }

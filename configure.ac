@@ -13,6 +13,9 @@ AC_PROG_LIBTOOL
 OR_ENABLE_THREADS
 OR_ENABLE_SHARED
 
+# See if we have defined the UTD path
+UTD_PATH_CONFIG
+
 # Checks for header files.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
@@ -24,6 +27,8 @@ AC_CHECK_HEADERS(stdarg.h)
 
 # Checks for library functions.
 AC_CHECK_FUNCS([memset])
+
+UTD_ENABLE_AUTOTOOLS
 
 AC_CHECK_PROG(MCC,imcc,imcc,"$CC")
 

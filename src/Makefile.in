@@ -284,6 +284,7 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+UTDLIB_AUTOTOOLS = @UTDLIB_AUTOTOOLS@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -352,11 +353,11 @@ PUBLIC_HDRS = \
 	sverilog.h
 
 libopen_sverilog_la_LDFLAGS = -version-info 1:0:0
-AM_LDFLAGS = -lm
 testparser_SOURCES = main.c
 testparser_LDADD = \
 		libopen_sverilog.la \
-		$(abs_top_srcdir)/lib/libutd.la
+		$(abs_top_srcdir)/lib/libutd.la \
+		-lm
 
 ACLOCAL_AMFLAGS = -I m4
 AM_CPPFLAGS = \

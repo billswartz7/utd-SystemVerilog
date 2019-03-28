@@ -6,3 +6,11 @@ include/utd
 lib
 src/developer/tmp
 src/developer/sverilog.output
+src/developer/sv_bnf.pdf
+src/*.v
+c
+c2
+.DS_Store
+tests
+test.passed
+test.failed

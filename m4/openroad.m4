@@ -61,3 +61,87 @@ AC_DEFUN([OR_ENABLE_SHARED], [
 	AC_DEFINE(OPENROAD_STATIC_BUILD, 1, [Is this a static build?])
     fi
 ])
+
+
+AC_DEFUN([UTD_PATH_CONFIG], [
+    AC_MSG_CHECKING([for UTD common library path])
+    AC_ARG_WITH(utdlib,
+	AC_HELP_STRING([--with-utdlib],
+	    [directory containing the UTD common library (libutd)]),
+	with_utdlib="${withval}")
+    AC_CACHE_VAL(ac_cv_c_utdlib,[
+
+	# First check to see if --with-utdlib was specified.
+	if test x"${with_utdlib}" != x ; then
+	    if test -f "${with_utdlib}/include/utd/config.h" ; then
+		ac_cv_c_utdlib="`(cd "${with_utdlib}"; pwd)`"
+	    else
+		AC_MSG_ERROR([${with_utdlib} directory doesn't contain utd/config.h])
+	    fi
+	fi
+
+    ])
+
+    if test x"${ac_cv_c_utdlib}" = x ; then
+	UTDLIB_ROOT_DIR="# no Tcl configs found"
+	AC_MSG_RESULT([Can't find UTD configuration definitions. Use --with-utdlib to specify a directory containing libutd])
+    else
+	UTDLIB_ROOT_DIR="${ac_cv_c_utdlib}"
+	AC_MSG_RESULT([found ${UTDLIB_ROOT_DIR}/include/utd/config.h])
+    fi
+])
+
+#------------------------------------------------------------------------
+# UTD_ENABLE_AUTOTOOLS --
+#
+#	Allows the enabling and disabling of autotools
+#
+# Arguments:
+#	none
+#
+# Results:
+#
+#	Adds the following arguments to configure:
+#		--enable-autotools=yes|no
+#
+#	Sets the following vars:
+#		ACLOCAL
+#		AUTOCONF
+#		AUTOHEADER
+#		AUTOMAKE
+#		MAKEINFO
+#------------------------------------------------------------------------
+
+AC_DEFUN([UTD_ENABLE_AUTOTOOLS], [
+    AC_MSG_CHECKING([whether to use autotools to regenerate Makefiles])
+    AC_ARG_ENABLE(autotools,
+	AC_HELP_STRING([--enable-autotools],
+	    [rebuild Makefiles with autotools (default: off)]),
+	[utdautotools_ok=$enableval], [utdautotools_ok=no])
+
+    if test "${enable_autotools+set}" = set; then
+	enableval="$enable_autotools"
+	utdautotools_ok=$enableval
+    else
+	utdautotools_ok=no
+    fi
+
+    if test "$utdautotools_ok" = "yes" ; then
+	AC_MSG_RESULT([autotools enabled])
+	UTDLIB_AUTOTOOLS="--enable-autotools"
+    else
+	AC_MSG_RESULT([autotools disabled])
+	ACLOCAL="echo no aclocal mode"
+	AUTOCONF="echo no autoconf mode"
+	AUTOHEADER="echo no autoheader mode"
+	AUTOMAKE="echo no automake mode"
+	MAKEINFO="echo no makeinfo mode"
+	UTDLIB_AUTOTOOLS="--disable-autotools"
+    fi
+    AC_SUBST(ACLOCAL)
+    AC_SUBST(AUTOCONF)
+    AC_SUBST(AUTOHEADER)
+    AC_SUBST(AUTOMAKE)
+    AC_SUBST(MAKEINFO)
+    AC_SUBST(UTDLIB_AUTOTOOLS)
+])
