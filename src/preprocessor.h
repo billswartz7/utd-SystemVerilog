@@ -14,7 +14,9 @@
 #include <sverilog_config.h>
 #include <utd/base.h>
 #include <utd/deck.h>
+#include <utd/dstring.h>
 #include <utd/hash.h>
+#include <utd/stringhash.h>
 
 #ifdef DEBUG
 #define YYDEBUG 1
@@ -75,38 +77,44 @@ typedef struct sverilog_parse_context_rec {
     UTDHASHPTR search_dirs ;    	//!< Where to look for include files.
     UTDHASHPTR macrodefines ;   	//!< `define kvp matching.
     UTDHASHPTR includes ;		//!< Include directives.
+    UTD_DSTRING temp_buf ;		//!< Used for expression manipulation
+    UTDSTR_HASHPTR strings ;		//!< Strings table
     VERILOG_TIMESCALE_DIRECTIVE timescale ; //!< Timescale information
     SVERILOG_PRIMITIVE_STRENGTH_T unconnected_drive_pull; //!< nounconnectedrive
     char *scratch ;			//!< used internally
     UTDDECKPTR ifdefs ;         	//!< Storage for conditional compile stack.
+    int expr_pool ;			//!< pool id for expressions
+    int expr_type_pool ;		//!< pool id for expression types
     int errors ;			//!< Errors encountered.
     int *line_num ;			//!< low level line number variable 
     char **scanner_text ;		//!< low level scanner text
     char *file_name ;			//!< current open filename
-    char last_file_name[LAST_FILE_LEN] ;//! < remember last file name */	
+    char last_file_name[LAST_FILE_LEN] ;//! < remember last file name
+    SVER_CALLBACK callbacks[SVER_CALLBACK_NUM_FUNCS] ;//! < callback functions 
+    void *user_data ;			//! < callback user data
 } SVERILOG_PARSE, *SVERILOG_PARSEPTR ;
 
 
 #define YY_DECL int sverilog_lex ( SVERILOG_PARSEPTR parse_p )
 extern int sverilog_lex ( SVERILOG_PARSEPTR parse_p ) ;
 extern void sverilog_error(SVERILOG_PARSEPTR parse_p,const char *msg) ;
-extern void verilog_preproc( SVERILOG_PARSEPTR parse_p, INT token, char *value ) ;
+extern void sverilog_preproc( SVERILOG_PARSEPTR parse_p, INT token, char *value,INT len ) ;
 extern void sverilog_lowlevel_init(SVERILOG_PARSEPTR parse_p) ;
 extern void verilog_flex_set_info( SVERILOG_PARSEPTR parse_p ) ;
 
-#define EMIT_TOKEN(parse_xz,xz_z,val_xz)   verilog_preproc(parse_xz,xz_z,val_xz);\
-					   if( parse_xz->emit ) {     \
-					     return( xz_z ) ;         \
-					   }
+#define EMIT_TOKEN(parse_xz,xz_z,val_xz,len_xz)   sverilog_preproc(parse_xz,xz_z,val_xz,len_xz);\
+						    if( parse_xz->emit ) {     \
+						      return( xz_z ) ;         \
+						    }
 
 // For now - eventually we want to turn this off restriction these
 // keywords when in verilog mode.
-#define EMIT_SVTOKEN(parse_xz,xz_z,val_xz) verilog_preproc(parse_xz,xz_z,val_xz);\
-					   if( parse_xz->emit && parse_xz->allow_sv_keys ) { \
-					     return( xz_z ) ;         \
-					   } else if( parse_xz->emit ){ \
-					     REJECT ; \
-					   }
+#define EMIT_SVTOKEN(parse_xz,xz_z,val_xz,len_xz) sverilog_preproc(parse_xz,xz_z,val_xz,len_xz);\
+						    if( parse_xz->emit && parse_xz->allow_sv_keys ) { \
+						      return( xz_z ) ;         \
+						    } else if( parse_xz->emit ){ \
+						      REJECT ; \
+						    }
 
 // ----------------------- Include/File Directives ----------------------
 
@@ -293,6 +301,13 @@ extern void sverilog_set_in  (FILE * in_str  ) ;
 extern FILE *sverilog_get_out (void ) ;
 extern void sverilog_set_out  (FILE * out_str  ) ;
 
+
+/* -----------------------------------------------------------------
+ * Function which returns back the callback functions defined above.
+ * Takes an argument initialize which sets all of the argument functions NULL.
+----------------------------------------------------------------- */
+extern SVER_CALLBACK *sverilog_callback_funcs(SVERILOG_PARSEPTR parse_p, 
+                                              BOOL initialize) ;
 
 #ifdef LATER
 /*!

@@ -4,14 +4,16 @@
 */
 
 #include <sverilog_config.h>
-#include <verilog/sverilog.h>
-#include "preprocessor.h"
 #include <utd/file.h>
 #include <utd/hash.h>
 #include <utd/string.h>
+#include <verilog/sverilog.h>
+#include <verilog/parse.h>
+#include "preprocessor.h"
+#include <verilog/expr.h>
 #include "sverilog_scanner.h"
 
-SVERILOG_PARSEPTR sverilog_parser_init(void)
+SVERILOG_PARSEPTR sverilog_parser_init( SVERILOG_OPTIONS_T options )
 {
     SVERILOG_PARSEPTR parse_p ;		// info record 
     parse_p = UTDCALLOC( 1, SVERILOG_PARSE ) ;
@@ -47,12 +49,6 @@ void sverilog_parser_add_search_path( SVERILOG_PARSEPTR parse_p,
 } /* end sverilog_parser_add_search_path() */
 
 
-void sverilog_parser_add_default_callbacks( SVERILOG_PARSEPTR parse_p )
-{
-
-  // stub for now.
-} /* end sverilog_parser_add_default_callbacks() */
-
 /* The top level file parsing call */
 int sverilog_parse_file( SVERILOG_PARSEPTR parse_p, char *filename )
 {
@@ -79,7 +75,9 @@ int sverilog_parse_file( SVERILOG_PARSEPTR parse_p, char *filename )
 	// Reset the global line counter, we are in a new file!
 	// Was: sverilog_lineno = 0 ;  No globals needed here
 	*(parse_p->line_num) = 1 ;
+	sver_expr_init( parse_p ) ;
 	result = sverilog_parse( parse_p ) ;
+	sver_expr_free( parse_p ) ;
       }
     }
 
@@ -98,7 +96,7 @@ int sverilog_parser_get_errors( SVERILOG_PARSEPTR parse_p )
     return( parse_p->errors ) ;
 } /* end sverilog_parser_get_errors() */
 
-void verilog_preproc( SVERILOG_PARSEPTR parse_p, INT token, char *value )
+void sverilog_preproc( SVERILOG_PARSEPTR parse_p, INT token, char *value, INT length )
 {
     char *string_data ;			/* get low level string */
 
@@ -106,18 +104,19 @@ void verilog_preproc( SVERILOG_PARSEPTR parse_p, INT token, char *value )
     if( parse_p->emit ) {  
       if( parse_p->preproc_out ){
 	if( value ){
-	  fprintf( parse_p->preproc_out, "%s", value ) ;
+	  fprintf( parse_p->preproc_out, "%.*s", length, value);
+
 	} else {
 	  if( parse_p->scanner_text ){
 	    string_data = *(parse_p->scanner_text) ;
 	    if( string_data ){
-	      fprintf( parse_p->preproc_out, "%s", string_data ) ;
+	      fprintf( parse_p->preproc_out, "%.*s", length, string_data ) ;
 	    }
 	  }
 	}
       }
     }
-} /* end verilog_preproc() */
+} /* end sverilog_preproc() */
 
 /*! 
 @brief Handles the encounter of an include directive.
@@ -482,7 +481,7 @@ char *sverilog_new_identifier( SVERILOG_PARSEPTR parse_p,
     char *identifier_p ;			// The identifier
 
     // We could do more with this and save identifier type.  Not sure
-    // it is necessary.  For now just clone.
+    // it is necessary.  For now just clone.  FIXME: put in string hash table.
     identifier_p = UTDstrclone( string ) ;
     return( identifier_p ) ;
 } /* end sverilog_new_identifier() */
@@ -582,108 +581,41 @@ int sverilog_show_position( const char *start, const char *msg )
    return( pos ) ;
 } /* end line_position() */
 
-#ifdef LATER
 
-/*!
-@brief Clears the stack of files being parsed, and sets the current file to
-the supplied string.
-@param [inout] preproc - The context who's file name is being set.
-@param [in] file - The file path to put as the current file.
-*/
-void verilog_preprocessor_set_file(
-    verilog_preprocessor_context * preproc,
-    char * file
-){
-    while(ast_stack_peek(preproc -> current_file) != NULL)
-    {
-        ast_stack_pop(preproc -> current_file);
+SVER_CALLBACK *sverilog_callback_funcs( SVERILOG_PARSEPTR parse_p, BOOL initialize)
+{
+    INT func ;			/* count functions */
+    if( initialize ){
+      for( func = 0 ; func <= SVER_CALLBACK_LAST_FUNC ; func++ ){
+	parse_p->callbacks[func].f.void_func = NULL ;
+      }
     }
-    ast_stack_push(preproc -> current_file, file);
-}
+    return( parse_p->callbacks ) ;
+} /* end sverilog_callback_funcs() */
 
-/*!
-@brief Returns the file currently being parsed by the context, or NULL 
-@param [in] preproc - The context to get the current file for.
-*/
-char * verilog_preprocessor_current_file(
-    verilog_preprocessor_context * preproc
-){
-    return ast_stack_peek(preproc -> current_file);
-}
-
-
-void verilog_free_preprocessor_context(verilog_preprocessor_context * tofree)
+static int sver_echo_string( void *user_data, char *string )
 {
-    printf("ERROR: Function not implemented. preprocessor context at %p not freed.\n", tofree);
-}
+    fprintf( stderr, " %s", string ) ;
+    return(0) ;
+} /* end sver_echo_string() */
 
-void verilog_preproc_enter_cell_define()
+
+SVER_CALLBACKPTR sverilog_parser_add_default_callbacks( SVERILOG_PARSEPTR parse_p,
+                                                        void *user_data )
 {
-    yy_preproc -> in_cell_define = AST_FALSE;
-}
+    SVER_CALLBACKPTR callbacks ;	/* array of callbacks */
 
-void verilog_preproc_exit_cell_define()
-{
-    yy_preproc -> in_cell_define = AST_FALSE;
-}
-
-
-
-
-
-
-/*! 
-@brief Handles the encounter of an include directive.
-@returns A pointer to the newly created directive reference.
-*/
-verilog_include_directive * verilog_preprocessor_include(
-    char * filename,
-    unsigned int lineNumber
-){
-    verilog_include_directive * toadd = AST_CALLOC(1,verilog_include_directive);
-
-    filename = filename + 1; // Remove leading quote mark.
-    size_t length = strlen(filename);
-    
-    toadd -> filename = ast_strdup(filename);
-    toadd -> filename[length-1] = '\0';
-    toadd -> lineNumber = lineNumber;
-
-    ast_list_append(yy_preproc -> includes, toadd);
-
-    // Search the possible include paths to find a match.
-    unsigned int d = 0;
-    for(d = 0; d < yy_preproc -> search_dirs -> items; d ++)
-    {
-        char * dir       = ast_list_get(yy_preproc -> search_dirs, d);
-        size_t dirlen    = strlen(dir)+1;
-        size_t namelen   = strlen(toadd -> filename);
-        char * full_name = AST_CALLOC(dirlen+namelen, char);
-
-        strcat(full_name, dir);
-        strcat(full_name, toadd -> filename);
-
-        FILE * handle = fopen(full_name,"r");
-        if(handle)
-        {
-            fclose(handle);
-            toadd -> filename = full_name;
-            toadd -> file_found = AST_TRUE;
-            
-            // Since we are diving into an include file, update the stack of
-            // files currently being parsed.
-            ast_stack_push(yy_preproc -> current_file, filename);
-
-            break;
-        }
-        else
-        {   
-            toadd -> file_found = AST_FALSE;
-        }
+    if( parse_p ){
+      callbacks = sverilog_callback_funcs(parse_p,TRUE) ;
+      if( callbacks ){
+	callbacks[SVERCB_EXPR_OP_F].f.expr_op_func = (SVER_CALLBACK_expr_op *) sver_expr_merge_expressions ;
+	callbacks[SVERCB_EXPR_ADD_CONCAT_F].f.expr_op_func = (SVER_CALLBACK_expr_op *) sver_expr_merge_expressions ;
+	callbacks[SVERCB_MODULE_NAME_F].f.str1_func = sver_echo_string ;
+	callbacks[SVERCB_MODULE_END_F].f.str1_func = sver_echo_string ;
+	parse_p->user_data = user_data ;
+      }
+      return(callbacks) ;
     }
+    return(NULL) ;
 
-    return toadd;
-}
-
-
-#endif /* LATER */
+} /* end sverilog_parser_add_default_callbacks() */

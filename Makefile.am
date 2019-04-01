@@ -36,3 +36,6 @@ test:
 	   fi ; \
 	done ; \
 	echo "$$passed files passed.  $$failed files failed."
+
+testclean:	
+	find . -name "*.preproc" -exec \rm -f {} \; -print

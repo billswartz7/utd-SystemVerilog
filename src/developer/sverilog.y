@@ -1,8 +1,5 @@
 %parse-param {SVERILOG_PARSEPTR parse_p}
 %lex-param {SVERILOG_PARSEPTR parse_p}
-%glr-parser     
-%expect 5
-%expect-rr 0
 
 %{
     #include <stdio.h>
@@ -10,6 +7,7 @@
     #include <assert.h>
     #include <verilog/sverilog.h>
     #include <preprocessor.h>
+    #include <verilog/expr.h>
 
 
     /* These are definitions from the scanner */
@@ -49,12 +47,12 @@
 
 /* token types */
 %union {
-    char        		boolean ;
     char        		*string ;
-    char        		*term ;
-    char        		*keyword ;
-    char        		*identifier ;
+    int				integer ;
+    double                      real ;
     SVERILOG_OPERATOR_T 	operator ;
+    SVERILOG_PORT_DIR_T		direction ;
+    SVER_EXPRPTR 		expr ;
 }
 
 %token <string> ANY
@@ -91,10 +89,10 @@
 %token <string> NUM_SIZE
 %token <string> UNSIGNED_NUMBER
 
-%token <identifier> SYSTEM_ID
-%token <identifier> SIMPLE_ID
-%token <identifier> ESCAPED_ID
-%token <identifier> DEFINE_ID
+%token <string> SYSTEM_ID
+%token <string> SIMPLE_ID
+%token <string> ESCAPED_ID
+%token <string> DEFINE_ID
 
 %token <string> ATTRIBUTE_START
 %token <string> ATTRIBUTE_END
@@ -306,7 +304,21 @@
 %token <keyword> KW_TIMEUNITS
 %token <keyword> KW_STEP
 %token <keyword> KW_UNIT
-%token <keyword> SVID
+%token <expr> SVID
+
+%type <real> fixed_point_number
+%type <integer> integer_number decimal_number unsigned_number
+%type <operator> unary_operator
+%type <direction> port_direction net_port_header
+%type <expr> identifier port_identifier module_instance_identifier number qstring
+%type <expr> expression expression_list primary primary_literal mintypmax_expression
+%type <expr> concatenation multiple_concatenation 
+%type <expr> hierarchical_identifier hierarchical_identifier_sub
+%type <expr> select bit_select part_select_range range indexed_range
+%type <expr> net_lvalue ps_or_hierarchical_net_identifier
+%type <expr> unpacked_dimension_list unpacked_dimension unpacked_dimension_o
+%type <expr> packed_dimension_list packed_dimension packed_dimension_o
+%type <string> module_ansi_header module_nonansi_header module_identifier
 
 %start grammar_begin
 
@@ -388,26 +400,55 @@ description 	: module_declaration
 
 module_declaration : 
 	          module_ansi_header timeunits_declaration_o end_module
+		{
+		  if( parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func ){
+		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p->user_data, $1 ) ;
+		  }
+		}
 		| module_ansi_header timeunits_declaration_o
 		    non_port_module_item_list end_module
+		{
+		  if( parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func ){
+		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p->user_data, $1 ) ;
+		  }
+		}
 		| module_nonansi_header timeunits_declaration_o end_module
+		{
+		  if( parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func ){
+		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p->user_data, $1 ) ;
+		  }
+		}
 		| module_nonansi_header timeunits_declaration_o 
 		    module_item_list end_module
+		{
+		  if( parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func ){
+		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p->user_data, $1 ) ;
+		  }
+		}
 		;
 
 module_ansi_header: 
 		  attribute_instances module_keyword lifetime_o 
 		     module_identifier parameter_port_list_o SEMICOLON
+		  {
+		    $$ = $4 ; /* pass up the module identifier */
+		  }
 
 		| attribute_instances module_keyword lifetime_o 
 		     module_identifier parameter_port_list_o 
 		     list_of_port_declarations SEMICOLON
+		  {
+		    $$ = $4 ; /* pass up the module identifier */
+		  }
 		;
 
 module_nonansi_header: 
 		  attribute_instances module_keyword lifetime_o 
 		     module_identifier parameter_port_list_o 
 		     list_of_ports SEMICOLON
+		  {
+		    $$ = $4 ; /* pass up the module identifier */
+		  }
 		;
 
 module_keyword	: KW_MODULE
@@ -514,17 +555,49 @@ port_declarations : attribute_instances ansi_port_declaration
 		| port_declarations COMMA attribute_instances ansi_port_declaration 
 
 ansi_port_declaration: net_port_header port_identifier unpacked_dimension_o
-#	     | [ variable_port_header ] port_identifier { variable_dimension } [ = constant_expression ]
+		{
+		  SVER_EXPRPTR range_p ;
+		  range_p = $3 ;
+		  if( parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func ){
+		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p->user_data, $2->string_equiv ) ;
+		  }
+		  if( range_p && parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func ){
+		    parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p->user_data, range_p ) ;
+		  }
+		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, $2 ) ;
+		  }
+		  if( parse_p->callbacks[SVERCB_ANSI_PORT_DIR_F].f.port_dir_func ){
+		    parse_p->callbacks[SVERCB_ANSI_PORT_DIR_F].f.port_dir_func( parse_p->user_data, $1 ) ;
+		  }
+		}
+
+#	     | [ variable_port_header ] port_identifier { variable_dimension } [ = expression ]
 #	     | [ net_port_header | variable_port_header ] . port_identifier 
 #               ( [ expression ] )
 		;
 		  
 port_direction	: KW_INPUT
+		{
+		  $$ = PORT_DIR_INPUT_T ;
+		}
 	       	| KW_OUTPUT
+		{
+		  $$ = PORT_DIR_OUTPUT_T ;
+		}
 		| KW_INOUT
+		{
+		  $$ = PORT_DIR_INOUT_T ;
+		}
 		| KW_REF
+		{
+		  $$ = PORT_DIR_REF_T ;
+		}
 
 net_port_header : port_direction net_port_type
+		{
+		  $$ = $1 ;
+		}
 # This is a killer.  Don't allow this but user must give port direction.
 #		| net_port_type
 
@@ -537,16 +610,46 @@ port            : port_expression
 		;
 
 port_expression : port_reference 
-		| OPEN_CURLBRACE port_reference_list CLOSE_CURLBRACE 
+		| port_concat_start port_reference_list CLOSE_CURLBRACE 
+		{
+		  if( parse_p->callbacks[SVERCB_PORT_CONCAT_END_F].f.void_func ){
+		    parse_p->callbacks[SVERCB_PORT_CONCAT_END_F].f.void_func( parse_p->user_data ) ;
+		  }
+		}
 		;
+
+port_concat_start: OPEN_CURLBRACE 
+		{
+		  if( parse_p->callbacks[SVERCB_PORT_CONCAT_START_F].f.void_func ){
+		    parse_p->callbacks[SVERCB_PORT_CONCAT_START_F].f.void_func( parse_p->user_data ) ;
+		  }
+		}
+		 ;
 
 port_reference_list : port_reference
 		port_reference_list COMMA port_reference
 
 
 port_reference  : port_identifier
-		| port_identifier constant_select
+		{
+		  if( parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func ){
+		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p->user_data, $1->string_equiv ) ;
+		  }
+		}
+		| port_identifier port_reference_select
+		{
+		  if( parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func ){
+		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p->user_data, $1->string_equiv ) ;
+		  }
+		}
 		;
+
+port_reference_select: select
+		{
+		  if( parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func ){
+		    parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p->user_data, $1 ) ;
+		  }
+		}
 
 
 port_declaration : attribute_instances inout_declaration
@@ -642,14 +745,32 @@ parameter_declaration : KW_PARAMETER data_type_or_implicit list_of_param_assignm
 #		      | KW_PARAMETER type list_of_type_assignments
 
 /* A.2.1.2 Port Declarations */
-
+/* FIXME - missing callbacks */
 inout_declaration : KW_INOUT net_port_type list_of_port_identifiers
+		{
+		  if( parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func ){
+		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p->user_data,PORT_DIR_INOUT_T ) ;
+		  }
+		}
+		;
 
 input_declaration : KW_INPUT net_port_type list_of_port_identifiers
+		{
+		  if( parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func ){
+		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p->user_data,PORT_DIR_INPUT_T ) ;
+		  }
+		}
 #		  | input variable_port_type list_of_variable_identifiers
+		;
 
 output_declaration : KW_OUTPUT net_port_type list_of_port_identifiers
+		{
+		  if( parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func ){
+		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p->user_data,PORT_DIR_OUTPUT_T ) ;
+		  }
+		}
 #	      | output variable_port_type list_of_variable_port_identifiers
+		;
 
 #interface_port_declaration ::=
 #		  interface_identifier list_of_interface_identifiers
@@ -678,11 +799,13 @@ output_declaration : KW_OUTPUT net_port_type list_of_port_identifiers
 #		[ delay3 ] 
 #		list_of_net_decl_assignments ;
 
-net_declaration : net_type net_strength_option
-	        data_type_or_implicit 
-		list_of_net_decl_assignments SEMICOLON
+net_declaration : net_type net_strength_option data_type_or_implicit 
+		  list_of_net_decl_assignments SEMICOLON
 		{
-		   sverilog_expect_expression(parse_p,FALSE) ;
+		  if( parse_p->callbacks[SVERCB_MODNETS_END_F].f.void_func ){
+		    parse_p->callbacks[SVERCB_MODNETS_END_F].f.void_func( parse_p->user_data ) ;
+		  }
+		  sverilog_expect_expression(parse_p,FALSE) ;
 		}
 		;
 
@@ -809,7 +932,7 @@ data_type_or_implicit : /* empty */
 #		;
 		
 #enum_name_declaration : enum_identifier [ '[' integral_number 
-#                [ ':' integral_number ] ']' ] [ '=' constant_expression ] 
+#                [ ':' integral_number ] ']' ] [ '=' expression ] 
 		
 #class_scope 	: class_type ':'':'
 #		;
@@ -842,20 +965,79 @@ integer_vector_type : KW_BIT
 
 
 net_type	: KW_SUPPLY0
+		{
+		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_SUPPLY0 ) ;
+		  }
+		}
 		| KW_SUPPLY1
+		{
+		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_SUPPLY1 ) ;
+		  }
+		}
 		| KW_TRI
+		{
+		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRI ) ;
+		  }
+		}
 		| KW_TRIAND
+		{
+		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRIAND ) ;
+		  }
+		}
 		| KW_TRIOR
+		{
+		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRIOR ) ;
+		  }
+		}
 		| KW_TRIREG
+		{
+		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRIREG ) ;
+		  }
+		}
 		| KW_TRI0
+		{
+		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRI0 ) ;
+		  }
+		}
 		| KW_TRI1
+		{
+		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRI1 ) ;
+		  }
+		}
 		| KW_UWIRE
+		{
+		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_UWIRE ) ;
+		  }
+		  sverilog_expect_expression(parse_p,TRUE) ;
+		}
 		| KW_WIRE 
 		{
-		   sverilog_expect_expression(parse_p,TRUE) ;
+		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_WIRE ) ;
+		  }
+		  sverilog_expect_expression(parse_p,TRUE) ;
 		}
 		| KW_WAND
+		{
+		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_WAND ) ;
+		  }
+		}
 		| KW_WOR
+		{
+		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_WOR ) ;
+		  }
+		}
 		;
 
 net_port_type	: data_type_or_implicit
@@ -972,7 +1154,17 @@ list_of_port_identifiers : unpacked_port_identifier
 		;
 
 unpacked_port_identifier: port_identifier
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, $1 ) ;
+		  }
+		}
 		| port_identifier unpacked_dimension_list
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, $1 ) ;
+		  }
+		}
 		;
 
 # list_of_udp_port_identifiers ::= port_identifier { , port_identifier }
@@ -987,7 +1179,7 @@ unpacked_port_identifier: port_identifier
 
 # list_of_variable_identifiers ::= variable_identifier { variable_dimension } { , variable_identifier { variable_dimension } }
 
-# list_of_variable_port_identifiers ::= port_identifier { variable_dimension } [ = constant_expression ] { , port_identifier { variable_dimension } [ = constant_expression ] }
+# list_of_variable_port_identifiers ::= port_identifier { variable_dimension } [ = expression ] { , port_identifier { variable_dimension } [ = expression ] }
 
 # list_of_virtual_interface_decl ::=
 # 	   variable_identifier [ = interface_instance_identifier ]
@@ -1006,7 +1198,7 @@ net_decl_assignment: identifier unpacked_dimension_o
 net_decl_assignment: NET_DECL_ID
 */
 
-param_assignment: parameter_identifier EQ constant_expression 
+param_assignment: parameter_identifier EQ expression 
 		;
 
 #specparam_assignment: specparam_identifier EQ constant_mintypmax_expression
@@ -1036,28 +1228,52 @@ param_assignment: parameter_identifier EQ constant_expression
 
 /* A.2.5 Declaration ranges */
 
-unpacked_dimension : OPEN_SQ_BRACKET constant_range CLOSE_SQ_BRACKET 
-		| OPEN_SQ_BRACKET constant_expression CLOSE_SQ_BRACKET
+unpacked_dimension : OPEN_SQ_BRACKET range CLOSE_SQ_BRACKET 
+		{
+		  $$ = $2 ;
+		}
+		| OPEN_SQ_BRACKET expression CLOSE_SQ_BRACKET
+		{
+		  $$ = $2 ;
+		}
 		;
 
 unpacked_dimension_o : /* empty */
+		{
+		  $$ = NULL ;
+		}
 		| unpacked_dimension
 		;
 
 unpacked_dimension_list : unpacked_dimension
 		| unpacked_dimension_list unpacked_dimension
+		{
+		  $$ = $2 ; /* FIXME how to combine them */
+		}
 		;
 
 packed_dimension_o : /* empty */
+		{
+		  $$ = NULL ;
+		}
 		| packed_dimension
 		;
 
-packed_dimension : OPEN_SQ_BRACKET constant_range CLOSE_SQ_BRACKET
+packed_dimension : OPEN_SQ_BRACKET range CLOSE_SQ_BRACKET
+		{
+		  $$ = $2 ;
+		}
 		| unsized_dimension
+		{
+		  $$ = NULL ;
+		}
 		;
 
 packed_dimension_list: packed_dimension
 		| packed_dimension_list packed_dimension
+		{
+		  $$ = $2 ; /* FIXME how to combine them */
+		}
 		;
 
 associative_dimension : OPEN_SQ_BRACKET data_type CLOSE_SQ_BRACKET
@@ -1071,7 +1287,7 @@ variable_dimension : unsized_dimension
 		;
 
 queue_dimension : OPEN_SQ_BRACKET KW_DOLLAR_SIGN CLOSE_SQ_BRACKET
-		| OPEN_SQ_BRACKET KW_DOLLAR_SIGN COLON constant_expression CLOSE_SQ_BRACKET
+		| OPEN_SQ_BRACKET KW_DOLLAR_SIGN COLON expression CLOSE_SQ_BRACKET
 		;
 		
 unsized_dimension : OPEN_SQ_BRACKET CLOSE_SQ_BRACKET
@@ -1219,8 +1435,8 @@ unsized_dimension : OPEN_SQ_BRACKET CLOSE_SQ_BRACKET
 
 #/* -------------------------------------------------------------------------*/
 
-OB 		: OPEN_PAREN
-     		;
+# OB 		: OPEN_PAREN
+#     		;
 
 CB 		: CLOSE_PAREN
      		;
@@ -1426,7 +1642,7 @@ CB 		: CLOSE_PAREN
 
 #/* A.4.1 module instantiation */
 
-module_instantiation: module_identifier parameter_value_assignment_o 
+module_instantiation: instance_module_identifier parameter_value_assignment_o 
 		    hierarchical_instance_list SEMICOLON
 		;
 
@@ -1465,11 +1681,26 @@ named_parameter_assignment: DOT parameter_identifier OPEN_PAREN CLOSE_PAREN
 hierarchical_instance : name_of_instance OPEN_PAREN list_of_port_connections CLOSE_PAREN
 
 list_of_port_connections : ordered_port_connections
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func ){
+		    parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func( parse_p->user_data ) ;
+		  }
+		}
 		| named_port_connections
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func ){
+		    parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func( parse_p->user_data ) ;
+		  }
+		}
 		;
 
 name_of_instance: module_instance_identifier 
-#  		| module_instance_identifier range
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_INSTNAME_F].f.str1_func ){
+		    parse_p->callbacks[SVERCB_MODINST_INSTNAME_F].f.str1_func( parse_p->user_data, $1->string_equiv ) ;
+		  }
+		  sverilog_expect_expression(parse_p,FALSE) ;
+		}
 		;
 
 ordered_port_connections: ordered_port_connection
@@ -1481,14 +1712,49 @@ named_port_connections: named_port_connection
 		;
 
 ordered_port_connection : /* empty */ 
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, NULL ) ;
+		  }
+		}
 		| expression
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, $1 ) ;
+		  }
+		}
 		| list_of_attribute_instances expression
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, $2 ) ;
+		  }
+		}
 		;
 
 named_port_connection : DOT port_identifier named_open_paren named_close_paren
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func ){
+		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p->user_data, $2->string_equiv, NULL ) ;
+		  }
+		}
 		| DOT port_identifier named_open_paren expression named_close_paren
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func ){
+		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p->user_data, $2->string_equiv, $4 ) ;
+		  }
+		}
 		| list_of_attribute_instances DOT port_identifier named_open_paren named_close_paren
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_func ){
+		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p->user_data, $3->string_equiv, NULL ) ;
+		  }
+		}
 		| list_of_attribute_instances DOT port_identifier named_open_paren expression named_close_paren
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func ){
+		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p->user_data, $3->string_equiv, $5 ) ;
+		  }
+		}
 		;
 
 named_open_paren : OPEN_PAREN
@@ -1522,14 +1788,14 @@ named_close_paren : CLOSE_PAREN
 #		| module_or_generate_item
 #		;
 
-#generate_conditional_statement: KW_IF OPEN_PAREN constant_expression 
+#generate_conditional_statement: KW_IF OPEN_PAREN expression 
 #			CLOSE_PAREN generate_item_or_null
 #  			KW_ELSE generate_item_or_null
-#		| KW_IF OPEN_PAREN constant_expression CLOSE_PAREN 
+#		| KW_IF OPEN_PAREN expression CLOSE_PAREN 
 #			generate_item_or_null
 #		;
 
-#generate_case_statement: KW_CASE OPEN_PAREN constant_expression 
+#generate_case_statement: KW_CASE OPEN_PAREN expression 
 #			CLOSE_PAREN genvar_case_items KW_ENDCASE
 #		;
 
@@ -1538,18 +1804,18 @@ named_close_paren : CLOSE_PAREN
 #		| genvar_case_items genvar_case_item
 #		;
 
-#genvar_case_item: constant_expressions COLON generate_item_or_null
+#genvar_case_item: expressions COLON generate_item_or_null
 #		| KW_DEFAULT COLON generate_item_or_null
 #		| KW_DEFAULT generate_item_or_null
 #		;
 
 #generate_loop_statement: KW_FOR OPEN_PAREN genvar_assignment SEMICOLON 
-# 			constant_expression SEMICOLON genvar_assignment 
+# 			expression SEMICOLON genvar_assignment 
 #			CLOSE_PAREN KW_BEGIN COLON generate_block_identifier 
 #			generate_items KW_END
 #		;
 
-#genvar_assignment: genvar_identifier EQ constant_expression
+#genvar_assignment: genvar_identifier EQ expression
 #		;
 
 #generate_block	: KW_BEGIN generate_items KW_END
@@ -1594,7 +1860,7 @@ named_close_paren : CLOSE_PAREN
 #udp_output_declaration: attribute_instances KW_OUTPUT port_identifier
 #		| attribute_instances KW_OUTPUT KW_REG port_identifier
 #		| attribute_instances KW_OUTPUT KW_REG port_identifier 
-#			EQ constant_expression
+#			EQ expression
 #		;
 
 #udp_input_declaration: attribute_instances KW_INPUT list_of_port_identifiers
@@ -1714,6 +1980,11 @@ list_of_net_assignments: net_assignment
 		;
 
 net_assignment	: net_lvalue EQ expression
+		{
+		  if( parse_p->callbacks[SVERCB_NET_ASSIGN_F].f.expr_op_func ){
+		    parse_p->callbacks[SVERCB_NET_ASSIGN_F].f.expr_op_func( parse_p->user_data, $1, $3, OPERATOR_ASSIGN ) ;
+		  }
+		}
 		;
 
 #/* A.6.2 Procedural blocks and assignments */
@@ -2020,12 +2291,12 @@ net_assignment	: net_lvalue EQ expression
 #/* A.7.3 specify block terminals */
 
 #specify_input_terminal_descriptor: input_identifier
-#		| input_identifier constant_expression
+#		| input_identifier expression
 #		| input_identifier range_expression
 #		;
 
 #specify_output_terminal_descriptor: output_identifier
-#		| output_identifier constant_expression
+#		| output_identifier expression
 #		| output_identifier range_expression
 #		;
 
@@ -2113,29 +2384,29 @@ net_assignment	: net_lvalue EQ expression
 
 #/* A.8.1 Concatenations */
 
-concatenation : OPEN_CURLBRACE expression_list CLOSE_CURLBRACE
-		;
+concatenation	: OPEN_CURLBRACE expression_list CLOSE_CURLBRACE
+	       	{
+		  $$ = $2 ;
+		}
 
 expression_list : expression
 		| expression_list COMMA expression
+		{
+		  if( parse_p->callbacks[SVERCB_EXPR_ADD_CONCAT_F].f.expr_op_func ){
+		    $$ = parse_p->callbacks[SVERCB_EXPR_ADD_CONCAT_F].f.expr_op_func( parse_p, $1, $3, OPERATOR_CONCAT ) ;
+		  } else {
+		    $$ = NULL ;
+		  }
+		}
 		;
-
-# constant_concatenation : OPEN_CURLBRACE constant_expression_list CLOSE_CURLBRACE
-# 		;
-
-# constant_expression_list : constant_expression
-# 		| constant_expression_list COMMA constant_expression
-# 		;
 
 multiple_concatenation: OPEN_CURLBRACE expression 
 		      OPEN_CURLBRACE expression_list CLOSE_CURLBRACE
 		      CLOSE_CURLBRACE
+		{
+		   $$ = $4 ; // Need to fix this with a concat expr */
+		}
 		;
-
-#constant_multiple_concatenation: OPEN_CURLBRACE constant_expression 
-#			constant_concatenation CLOSE_CURLBRACE
-#		| OPEN_CURLBRACE constant_expression constant_concatenation_cont
-#		;
 
 #module_path_concatenation: OPEN_CURLBRACE module_path_expression modpath_concatenation_cont
 #		;
@@ -2186,9 +2457,6 @@ multiple_concatenation: OPEN_CURLBRACE expression
 
 #/* A.8.2 Function calls */
 
-#constant_expressions: constant_expression
-#		| constant_expressions COMMA constant_expression
-#		;
 
 #expressions	: expression 
 #		| expressions COMMA expression
@@ -2212,40 +2480,6 @@ multiple_concatenation: OPEN_CURLBRACE expression
 
 /* A.8.3 Expressions */
 
-conditional_expression : expression TERNARY attribute_instances 
-			expression COLON expression
-		;
-
-constant_expression: constant_primary
-#		| unary_operator attribute_instances constant_primary
-#		| constant_expression PLUS  attribute_instances constant_expression
-#		| constant_expression MINUS attribute_instances constant_expression
-#		| constant_expression STAR  attribute_instances constant_expression
-#		| constant_expression DIV   attribute_instances constant_expression
-#		| constant_expression MOD   attribute_instances constant_expression
-#		| constant_expression L_EQ  attribute_instances constant_expression
-#		| constant_expression L_NEQ attribute_instances constant_expression
-#		| constant_expression C_EQ  attribute_instances constant_expression
-#		| constant_expression C_NEQ attribute_instances constant_expression
-#		| constant_expression L_AND attribute_instances constant_expression
-#		| constant_expression L_OR  attribute_instances constant_expression
-#		| constant_expression POW   attribute_instances constant_expression
-#		| constant_expression LT    attribute_instances constant_expression
-#		| constant_expression LTE   attribute_instances constant_expression
-#		| constant_expression GT    attribute_instances constant_expression
-#		| constant_expression GTE   attribute_instances constant_expression
-#		| constant_expression B_AND attribute_instances constant_expression
-#		| constant_expression B_OR  attribute_instances constant_expression
-#		| constant_expression B_XOR attribute_instances constant_expression
-#		| constant_expression B_EQU attribute_instances constant_expression
-#		| constant_expression LSR   attribute_instances constant_expression
-#		| constant_expression LSL   attribute_instances constant_expression
-#		| constant_expression ASR   attribute_instances constant_expression
-#		| constant_expression ASL   attribute_instances constant_expression
-#		| constant_expression TERNARY attribute_instances 
-#			constant_expression COLON constant_expression
-#		| string
-#		;
 
 #constant_mintypmax_expression: constant_expression
 #		| constant_expression COLON constant_expression COLON constant_expression
@@ -2258,8 +2492,29 @@ constant_expression: constant_primary
 
 expression	: primary
 		| unary_operator attribute_instances primary
+		{
+		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $3, NULL, $1 ) ;
+		  } else {
+		    $$ = NULL ;
+		  }
+		}
 		| expression PLUS  attribute_instances expression
+		{
+		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $4, OPERATOR_PLUS ) ;
+		  } else {
+		    $$ = NULL ;
+		  }
+		}
 		| expression MINUS attribute_instances expression
+		{
+		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $4, OPERATOR_MINUS ) ;
+		  } else {
+		    $$ = NULL ;
+		  }
+		}
 		| expression STAR  attribute_instances expression
 		| expression DIV   attribute_instances expression
 		| expression MOD   attribute_instances expression
@@ -2309,31 +2564,43 @@ mintypmax_expression: expression
 #			module_path_expression
 #		;
 
-constant_range_expression : constant_expression
-		| constant_part_select_range
-		;
-
-constant_part_select_range : constant_range
-		| constant_indexed_range
-		;
-
-constant_part_select_range_o : /* empty */
-		| constant_part_select_range
-		;
 		
-constant_range  : constant_expression COLON constant_expression
+range  		: expression COLON expression
+		{
+		  SVER_EXPRPTR range_expr_p ;
+		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
+		    range_expr_p = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $3, OPERATOR_RANGE ) ;
+		  } else {
+		    range_expr_p = NULL ;
+		  }
+		  if( parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func ){
+		    $$ = parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p->user_data, range_expr_p ) ;
+		  } else {
+		    $$ = NULL ;
+		  }
+		}
 		;
 			  
-constant_indexed_range : constant_expression PLUS COLON constant_expression
-		| constant_expression MINUS COLON constant_expression
-
-part_select_range: constant_range
+part_select_range: range
  		| indexed_range
 		;
 
-indexed_range 	: expression PLUS COLON constant_expression
-	       	| expression MINUS COLON constant_expression
-
+indexed_range 	: expression PLUS COLON expression
+		{
+		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $4, OPERATOR_INDEXED_PLUS_RANGE ) ;
+		  } else {
+		    $$ = NULL ;
+		  }
+		}
+	       	| expression MINUS COLON expression
+		{
+		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $4, OPERATOR_INDEXED_MINUS_RANGE ) ;
+		  } else {
+		    $$ = NULL ;
+		  }
+		}
 
 
 #/* A.8.4 Primaries */
@@ -2352,18 +2619,29 @@ constant_primary: primary_literal
 
 primary		: primary_literal
 		| hierarchical_identifier
-#		| identifier_options_o hierarchical_identifier
-#		| identifier_options_o hierarchical_identifier select
 		| concatenation
 		| multiple_concatenation
 #		| function_call
+#		| identifier_options_o hierarchical_identifier
 #		| SIMPLE_ID constant_function_call_pid
 #		| system_function_call
 		| OPEN_PAREN mintypmax_expression CLOSE_PAREN
+		{
+		   $$ = $2 ;
+		}
 #		| text_macro_usage
 		| KW_THIS
+		{
+		   $$ = sver_expr_start_string_expr( parse_p, "this", KW_THIS ) ;
+		}
 		| KW_DOLLAR_SIGN
+		{
+		   $$ = sver_expr_start_string_expr( parse_p, "$", KW_DOLLAR_SIGN ) ;
+		}
 		| KW_NULL
+		{
+		   $$ = NULL ;
+		}
 #		;
 
 
@@ -2403,32 +2681,28 @@ implicit_class_handle_dot : KW_THIS DOT
 #		;
 
 primary_literal	: number
-		| QSTRING 
+		| qstring
 		;
 
 bit_select	: OPEN_SQ_BRACKET expression CLOSE_SQ_BRACKET 
+		{
+		   $$ = $2 ;
+		}
+		| OPEN_SQ_BRACKET part_select_range CLOSE_SQ_BRACKET 
+		{
+		   $$ = $2 ;
+		}
 	   	;
 
-bit_select_list	: bit_select
-	     	| bit_select_list bit_select
-		;
-
-bit_select_o	: /* empty */
-	     	| bit_select_list
-		;
-
-select		: bit_select_list 
-		| OPEN_SQ_BRACKET part_select_range CLOSE_SQ_BRACKET
-		;
-
-constant_bit_select : OPEN_SQ_BRACKET constant_expression CLOSE_SQ_BRACKET
-
-constant_bit_select_list : constant_bit_select
-		| constant_bit_select_list constant_bit_select 
-		;
-
-constant_select : constant_bit_select 
-		| constant_bit_select constant_part_select_range
+select 		: bit_select 
+		| select bit_select
+		{
+		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $2, OPERATOR_INDEX ) ;
+		  } else {
+		    $$ = NULL ;
+		  }
+		}
 		;
 
 
@@ -2484,37 +2758,87 @@ unary_operator	: PLUS
 #/* A.8.7 Numbers */
 
 number 		: integer_number
+		{
+		   $$ = sver_expr_start_int_expr( parse_p, $1, SVER_TOKEN_INTEGER_T ) ;
+		}
 	 	| NUM_REAL /* real_number */
+		{
+		   double convert_num ;
+		   convert_num = atof( $1 ) ; /* FIXME math */
+		   $$ = sver_expr_start_float_expr( parse_p, convert_num, SVER_TOKEN_REAL_T ) ;
+		}
 		;
 
 integer_number	: decimal_number
 	       	| OCT_VALUE /* octal_number */
+		{
+		  $$ = atoi( $1 ) ; /* FIXME math */
+		}
 		| BIN_VALUE /* binary_number */
+		{
+		  $$ = atoi( $1 ) ; /* FIXME math */
+		}
 		| HEX_VALUE /* hex_number */
+		{
+		  $$ = atoi( $1 ) ; /* FIXME math */
+		}
 		;
 
 decimal_number	: unsigned_number
 		| BIN_BASE BIN_VALUE
+		{
+		  $$ = atoi($2) ;  /* FIXMEM math */
+		}
 		| HEX_BASE HEX_VALUE
+		{
+		  $$ = atoi($2) ;  /* FIXMEM math */
+		}
 		| OCT_BASE OCT_VALUE
+		{
+		  $$ = atoi($2) ;  /* FIXMEM math */
+		}
 		| DEC_BASE UNSIGNED_NUMBER
+		{
+		  $$ = atoi($2) ;  /* FIXMEM math */
+		}
 		| UNSIGNED_NUMBER BIN_BASE BIN_VALUE
+		{
+		  $$ = atoi($3) ;  /* FIXMEM math */
+		}
 		| UNSIGNED_NUMBER HEX_BASE HEX_VALUE
+		{
+		  $$ = atoi($3) ;  /* FIXMEM math */
+		}
 		| UNSIGNED_NUMBER OCT_BASE OCT_VALUE
+		{
+		  $$ = atoi($3) ;  /* FIXMEM math */
+		}
 		| UNSIGNED_NUMBER DEC_BASE UNSIGNED_NUMBER
+		{
+		  $$ = atoi($3) ;  /* FIXMEM math */
+		}
 		;
 
 unsigned_number : UNSIGNED_NUMBER
+		{
+		  $$ = atoi( $1 ) ; /* FIXME_MATH */
+		}
 		;
 
 
 fixed_point_number : NUM_REAL
+		{
+		  $$ = atof( $1 ) ; /* FIXME_MATH */
+		}
 		;
 
 
 #/* A.8.8 Strings */
 
 qstring 	: QSTRING
+		{
+		   $$ = sver_expr_start_string_expr( parse_p, $1, QSTRING ) ;
+		}
 	 	;
 
 /* A.9.1 Attributes */
@@ -2533,7 +2857,7 @@ attr_specs 	: attr_spec
 		| attr_specs COMMA attr_spec
 		;
 
-attr_spec 	: attr_name EQ constant_expression
+attr_spec 	: attr_name EQ expression
 		| attr_name 
 		;
 
@@ -2559,7 +2883,7 @@ attr_name 	: identifier
 
 # escaped_arrayed_identifier: escaped_identifier 
 # 		| escaped_identifier range
-# 		;
+ 		;
 
 # escaped_hierarchical_identifier : escaped_hierarchical_branch escaped_hierarchical_identifiers
 # 		| escaped_hierarchical_branch
@@ -2576,18 +2900,38 @@ attr_name 	: identifier
 #     		;
 
 
-arrayed_identifier: simple_arrayed_identifier
-#		| escaped_arrayed_identifier
+# arrayed_identifier: simple_arrayed_identifier
+# 		| escaped_arrayed_identifier
 #		;
 
 hierarchical_identifier : SVID
 		| KW_ROOT SVID
+		{
+		  $$ = $2 ;
+		}
 		| hierarchical_identifier_sub
 		| KW_ROOT hierarchical_identifier_sub
+		{
+		  $$ = $2 ;
+		}
 		;
 
 hierarchical_identifier_sub : SVID DOT SVID
+		{
+		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $3, OPERATOR_DOT ) ;
+		  } else {
+		    $$ = NULL ;
+		  }
+		}
 		| hierarchical_identifier_sub DOT SVID
+		{
+		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $3, OPERATOR_DOT ) ;
+		  } else {
+		    $$ = NULL ;
+		  }
+		}
 		;
 
 #hierarchical_variable_identifier: hierarchical_identifier
@@ -2608,8 +2952,8 @@ hierarchical_identifier_sub : SVID DOT SVID
 #gate_instance_identifier        : arrayed_identifier
 #		;	
 
-module_instance_identifier      : arrayed_identifier
-		;	
+module_instance_identifier      : SVID
+		;
 
 #udp_instance_identifier         : arrayed_identifier
 #		;	
@@ -2648,7 +2992,22 @@ module_instance_identifier      : arrayed_identifier
 #		;	
 
 module_identifier: identifier 
+		{
+		  if( parse_p->callbacks[SVERCB_MODULE_NAME_F].f.str1_func ){
+		    parse_p->callbacks[SVERCB_MODULE_NAME_F].f.str1_func( parse_p->user_data, $1->string_equiv ) ;
+		  }
+		  $$ = $1->string_equiv ;
+		}
 		;	
+
+instance_module_identifier: identifier 
+		{
+		  if( parse_p->callbacks[SVERCB_MODINST_MODNAME_F].f.str1_func ){
+		    parse_p->callbacks[SVERCB_MODINST_MODNAME_F].f.str1_func( parse_p->user_data, $1->string_equiv ) ;
+		  }
+		  sverilog_expect_expression(parse_p,TRUE) ;
+		}
+		;
 
 # net_identifier_dimensions:	identifier
 # 		| identifier dimensions
@@ -2686,6 +3045,9 @@ port_identifier	: identifier
 		;
 
 ps_or_hierarchical_net_identifier : package_scope identifier 
+		{
+		  $$ = NULL ;
+		}
 		| hierarchical_identifier
 		;
 
@@ -2693,11 +3055,17 @@ ps_or_hierarchical_net_identifier : package_scope identifier
 #		;
 
 identifier 	: SIMPLE_ID
+		{
+		  $$ = sver_expr_start_string_expr(parse_p,$1,SIMPLE_ID) ;
+		}
 		| ESCAPED_ID 
+		{
+		  $$ = sver_expr_start_string_expr(parse_p,$1,ESCAPED_ID) ;
+		}
 		;
 
-simple_arrayed_identifier : SIMPLE_ID
-#		| SIMPLE_ID range
+# simple_arrayed_identifier : SIMPLE_ID
+# 		| SIMPLE_ID range
 		;
 
 #system_function_identifier: SYSTEM_ID
@@ -2707,11 +3075,5 @@ simple_arrayed_identifier : SIMPLE_ID
 		;
 
 
-#/* This is handled in the LEX
-#white_space 	: SPACE 
-#	     	| TAB 
-#		| NEWLINE
-#		;
-#*/
 
 %%

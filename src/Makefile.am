@@ -2,6 +2,7 @@
 
 lib_LTLIBRARIES = libopen_sverilog.la 
 libopen_sverilog_la_SOURCES = \
+	expr.c \
 	preprocessor.c \
 	sverilog_parser.c \
 	sverilog_scanner.c

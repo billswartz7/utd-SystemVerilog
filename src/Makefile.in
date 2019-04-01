@@ -134,8 +134,8 @@ am__uninstall_files_from_dir = { \
   }
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libopen_sverilog_la_LIBADD =
-am_libopen_sverilog_la_OBJECTS = preprocessor.lo sverilog_parser.lo \
-	sverilog_scanner.lo
+am_libopen_sverilog_la_OBJECTS = expr.lo preprocessor.lo \
+	sverilog_parser.lo sverilog_scanner.lo
 libopen_sverilog_la_OBJECTS = $(am_libopen_sverilog_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -164,8 +164,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/main.Po ./$(DEPDIR)/preprocessor.Plo \
-	./$(DEPDIR)/sverilog_parser.Plo \
+am__depfiles_remade = ./$(DEPDIR)/expr.Plo ./$(DEPDIR)/main.Po \
+	./$(DEPDIR)/preprocessor.Plo ./$(DEPDIR)/sverilog_parser.Plo \
 	./$(DEPDIR)/sverilog_scanner.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -341,6 +341,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libopen_sverilog.la 
 libopen_sverilog_la_SOURCES = \
+	expr.c \
 	preprocessor.c \
 	sverilog_parser.c \
 	sverilog_scanner.c
@@ -516,6 +517,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/expr.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/preprocessor.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sverilog_parser.Plo@am__quote@ # am--include-marker
@@ -684,7 +686,8 @@ clean-am: clean-binPROGRAMS clean-generic clean-libLTLIBRARIES \
 	clean-libtool clean-local mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/main.Po
+		-rm -f ./$(DEPDIR)/expr.Plo
+	-rm -f ./$(DEPDIR)/main.Po
 	-rm -f ./$(DEPDIR)/preprocessor.Plo
 	-rm -f ./$(DEPDIR)/sverilog_parser.Plo
 	-rm -f ./$(DEPDIR)/sverilog_scanner.Plo
@@ -734,7 +737,8 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/main.Po
+		-rm -f ./$(DEPDIR)/expr.Plo
+	-rm -f ./$(DEPDIR)/main.Po
 	-rm -f ./$(DEPDIR)/preprocessor.Plo
 	-rm -f ./$(DEPDIR)/sverilog_parser.Plo
 	-rm -f ./$(DEPDIR)/sverilog_scanner.Plo

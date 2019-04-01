@@ -8,6 +8,7 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif /* HAVE_STDLIB_H */
+#include <verilog/sverilog.h>
 #include <verilog/parse.h>
 #include <utd/base.h>
 #include <utd/file.h>
@@ -36,7 +37,7 @@ int main(int argc, char ** argv)
       sverilog_parser_add_search_path( parse_p, "../tests/" ) ;
       sverilog_parser_add_search_path( parse_p, "./" ) ;
 
-      sverilog_parser_add_default_callbacks( parse_p ) ;
+      sverilog_parser_add_default_callbacks( parse_p, NULL ) ;
 
       // Install your personalized callbacks here.
       //

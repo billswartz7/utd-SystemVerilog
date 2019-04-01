@@ -11,7 +11,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-typedef struct sverilog_preprocessor_context_rec *SVERILOG_PARSEPTR ;
+typedef struct sverilog_parse_context_rec *SVERILOG_PARSEPTR ;
 
 /* -----------------------------------------------------------------
  * These are options to the parser.  Strict verilog option ignores
@@ -31,10 +31,6 @@ extern SVERILOG_PARSEPTR sverilog_parser_init( SVERILOG_OPTIONS_T option ) ;
 //! Parser adds to the directory search paths
 extern void sverilog_parser_add_search_path( SVERILOG_PARSEPTR parse_p,
                                              const char *path ) ;
-
-//! Add the default callbacks.
-extern void sverilog_parser_add_default_callbacks( SVERILOG_PARSEPTR parse_p ) ;
-
 // The top level parsing interface
 extern int sverilog_parse_file( SVERILOG_PARSEPTR parse_p, char *filename ) ;
 
@@ -46,6 +42,9 @@ extern void sverilog_parser_set_preprocess_output( SVERILOG_PARSEPTR parse_p,
 //! Get the number of errors found.
 extern int sverilog_parser_get_errors( SVERILOG_PARSEPTR parse_p ) ;
 
+//! Add the default callbacks.  User may added use data.
+extern SVER_CALLBACKPTR sverilog_parser_add_default_callbacks( SVERILOG_PARSEPTR parse_p,
+                                                               void *user_data ) ;
 
 #ifdef __cplusplus
 } ;
