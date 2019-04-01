@@ -1,6 +1,10 @@
 #ifndef VERILOG_SVERILOG_H
 #define VERILOG_SVERILOG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 typedef enum  sverilog_boolean_e {
     SVERILOG_TRUE = 1,
     SVERILOG_FALSE = 0
@@ -3321,5 +3325,9 @@ extern ast_node * ast_node_new();
 /*! @} */
 
 #endif /* LATER */
+
+#ifdef __cplusplus
+} ;
+#endif /* __cplusplus */
 
 #endif /* VERILOG_SVERILOG_H */

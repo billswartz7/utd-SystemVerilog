@@ -11,6 +11,7 @@ PRIVATE_HDRS = \
 	preprocessor.h
 
 PUBLIC_HDRS = \
+	expr.h \
 	parse.h \
 	sverilog.h
 

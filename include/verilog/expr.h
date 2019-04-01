@@ -10,6 +10,10 @@
 #ifndef VERILOG_EXPR_H
 #define VERILOG_EXPR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /* -----------------------------------------------------------------
  * These definitions are such that they will never conflict with
  * YACC/Bison definitions which start above 255.  This allows us
@@ -45,6 +49,10 @@ extern SVER_EXPRPTR sver_expr_add_range( SVERILOG_PARSEPTR parse_p, SVER_EXPRPTR
 extern SVER_EXPRPTR sver_expr_merge_expressions( SVERILOG_PARSEPTR parse_p, 
 					         SVER_EXPRPTR e1_p, SVER_EXPRPTR e2_p, 
 				                 SVERILOG_OPERATOR_T op ) ;
+
+#ifdef __cplusplus
+} ;
+#endif /* __cplusplus */
 
 #endif /* VERILOG_EXPR_H */
 
