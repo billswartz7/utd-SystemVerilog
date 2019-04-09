@@ -192,7 +192,7 @@ SVER_EXPRPTR sver_expr_add_range( SVERILOG_PARSEPTR parse_p, SVER_EXPRPTR expr_p
     return(range_expr_p) ;
 } /* end sver_expr_add_range() */
 
-SVER_EXPRPTR sver_expr_merge_expressions( SVERILOG_PARSEPTR parse_p, 
+SVER_EXPRPTR sver_expr_merge_expressions( SVERILOG_PARSEPTR parse_p,void *user_data,
 					  SVER_EXPRPTR e1_p, SVER_EXPRPTR e2_p, 
 				          SVERILOG_OPERATOR_T op )
 {
@@ -253,6 +253,7 @@ SVER_EXPRPTR sver_expr_merge_expressions( SVERILOG_PARSEPTR parse_p,
 	UTDdstring_append( &parse_p->temp_buf, e1_p->string_equiv, -1 ) ;
       } else {
 	UTDmsgf(ERRMSG,routine,MSG_AT,"unexpected NULL for string 1\n" ) ;
+	ebreak() ;
       }
       if( op ){
 #ifdef LATER 
