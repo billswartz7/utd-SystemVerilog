@@ -402,27 +402,27 @@ module_declaration :
 	          module_ansi_header timeunits_declaration_o end_module
 		{
 		  if( parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p->user_data, $1 ) ;
+		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p, parse_p->user_data, $1 ) ;
 		  }
 		}
 		| module_ansi_header timeunits_declaration_o
 		    non_port_module_item_list end_module
 		{
 		  if( parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p->user_data, $1 ) ;
+		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p, parse_p->user_data, $1 ) ;
 		  }
 		}
 		| module_nonansi_header timeunits_declaration_o end_module
 		{
 		  if( parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p->user_data, $1 ) ;
+		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p, parse_p->user_data, $1 ) ;
 		  }
 		}
 		| module_nonansi_header timeunits_declaration_o 
 		    module_item_list end_module
 		{
 		  if( parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p->user_data, $1 ) ;
+		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p, parse_p->user_data, $1 ) ;
 		  }
 		}
 		;
@@ -559,16 +559,16 @@ ansi_port_declaration: net_port_header port_identifier unpacked_dimension_o
 		  SVER_EXPRPTR range_p ;
 		  range_p = $3 ;
 		  if( parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p->user_data, $2->string_equiv ) ;
+		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p, parse_p->user_data, $2->string_equiv ) ;
 		  }
 		  if( range_p && parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p->user_data, range_p ) ;
+		    parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p, parse_p->user_data, range_p ) ;
 		  }
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, $2 ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p, parse_p->user_data, $2 ) ;
 		  }
 		  if( parse_p->callbacks[SVERCB_ANSI_PORT_DIR_F].f.port_dir_func ){
-		    parse_p->callbacks[SVERCB_ANSI_PORT_DIR_F].f.port_dir_func( parse_p->user_data, $1 ) ;
+		    parse_p->callbacks[SVERCB_ANSI_PORT_DIR_F].f.port_dir_func( parse_p, parse_p->user_data, $1 ) ;
 		  }
 		}
 
@@ -613,7 +613,7 @@ port_expression : port_reference
 		| port_concat_start port_reference_list CLOSE_CURLBRACE 
 		{
 		  if( parse_p->callbacks[SVERCB_PORT_CONCAT_END_F].f.void_func ){
-		    parse_p->callbacks[SVERCB_PORT_CONCAT_END_F].f.void_func( parse_p->user_data ) ;
+		    parse_p->callbacks[SVERCB_PORT_CONCAT_END_F].f.void_func( parse_p, parse_p->user_data ) ;
 		  }
 		}
 		;
@@ -621,7 +621,7 @@ port_expression : port_reference
 port_concat_start: OPEN_CURLBRACE 
 		{
 		  if( parse_p->callbacks[SVERCB_PORT_CONCAT_START_F].f.void_func ){
-		    parse_p->callbacks[SVERCB_PORT_CONCAT_START_F].f.void_func( parse_p->user_data ) ;
+		    parse_p->callbacks[SVERCB_PORT_CONCAT_START_F].f.void_func( parse_p, parse_p->user_data ) ;
 		  }
 		}
 		 ;
@@ -633,13 +633,13 @@ port_reference_list : port_reference
 port_reference  : port_identifier
 		{
 		  if( parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p->user_data, $1->string_equiv ) ;
+		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p, parse_p->user_data, $1->string_equiv ) ;
 		  }
 		}
 		| port_identifier port_reference_select
 		{
 		  if( parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p->user_data, $1->string_equiv ) ;
+		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p, parse_p->user_data, $1->string_equiv ) ;
 		  }
 		}
 		;
@@ -647,7 +647,7 @@ port_reference  : port_identifier
 port_reference_select: select
 		{
 		  if( parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p->user_data, $1 ) ;
+		    parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p, parse_p->user_data, $1 ) ;
 		  }
 		}
 
@@ -749,7 +749,7 @@ parameter_declaration : KW_PARAMETER data_type_or_implicit list_of_param_assignm
 inout_declaration : KW_INOUT net_port_type list_of_port_identifiers
 		{
 		  if( parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func ){
-		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p->user_data,PORT_DIR_INOUT_T ) ;
+		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p, parse_p->user_data,PORT_DIR_INOUT_T ) ;
 		  }
 		}
 		;
@@ -757,7 +757,7 @@ inout_declaration : KW_INOUT net_port_type list_of_port_identifiers
 input_declaration : KW_INPUT net_port_type list_of_port_identifiers
 		{
 		  if( parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func ){
-		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p->user_data,PORT_DIR_INPUT_T ) ;
+		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p, parse_p->user_data,PORT_DIR_INPUT_T ) ;
 		  }
 		}
 #		  | input variable_port_type list_of_variable_identifiers
@@ -766,7 +766,7 @@ input_declaration : KW_INPUT net_port_type list_of_port_identifiers
 output_declaration : KW_OUTPUT net_port_type list_of_port_identifiers
 		{
 		  if( parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func ){
-		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p->user_data,PORT_DIR_OUTPUT_T ) ;
+		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p, parse_p->user_data,PORT_DIR_OUTPUT_T ) ;
 		  }
 		}
 #	      | output variable_port_type list_of_variable_port_identifiers
@@ -803,7 +803,7 @@ net_declaration : net_type net_strength_option data_type_or_implicit
 		  list_of_net_decl_assignments SEMICOLON
 		{
 		  if( parse_p->callbacks[SVERCB_MODNETS_END_F].f.void_func ){
-		    parse_p->callbacks[SVERCB_MODNETS_END_F].f.void_func( parse_p->user_data ) ;
+		    parse_p->callbacks[SVERCB_MODNETS_END_F].f.void_func( parse_p, parse_p->user_data ) ;
 		  }
 		  sverilog_expect_expression(parse_p,FALSE) ;
 		}
@@ -967,75 +967,75 @@ integer_vector_type : KW_BIT
 net_type	: KW_SUPPLY0
 		{
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_SUPPLY0 ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_SUPPLY0 ) ;
 		  }
 		}
 		| KW_SUPPLY1
 		{
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_SUPPLY1 ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_SUPPLY1 ) ;
 		  }
 		}
 		| KW_TRI
 		{
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRI ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_TRI ) ;
 		  }
 		}
 		| KW_TRIAND
 		{
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRIAND ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_TRIAND ) ;
 		  }
 		}
 		| KW_TRIOR
 		{
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRIOR ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_TRIOR ) ;
 		  }
 		}
 		| KW_TRIREG
 		{
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRIREG ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_TRIREG ) ;
 		  }
 		}
 		| KW_TRI0
 		{
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRI0 ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_TRI0 ) ;
 		  }
 		}
 		| KW_TRI1
 		{
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRI1 ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_TRI1 ) ;
 		  }
 		}
 		| KW_UWIRE
 		{
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_UWIRE ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_UWIRE ) ;
 		  }
 		  sverilog_expect_expression(parse_p,TRUE) ;
 		}
 		| KW_WIRE 
 		{
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_WIRE ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_WIRE ) ;
 		  }
 		  sverilog_expect_expression(parse_p,TRUE) ;
 		}
 		| KW_WAND
 		{
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_WAND ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_WAND ) ;
 		  }
 		}
 		| KW_WOR
 		{
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_WOR ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_WOR ) ;
 		  }
 		}
 		;
@@ -1156,13 +1156,13 @@ list_of_port_identifiers : unpacked_port_identifier
 unpacked_port_identifier: port_identifier
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, $1 ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p, parse_p->user_data, $1 ) ;
 		  }
 		}
 		| port_identifier unpacked_dimension_list
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, $1 ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p, parse_p->user_data, $1 ) ;
 		  }
 		}
 		;
@@ -1683,13 +1683,13 @@ hierarchical_instance : name_of_instance OPEN_PAREN list_of_port_connections CLO
 list_of_port_connections : ordered_port_connections
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func ){
-		    parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func( parse_p->user_data ) ;
+		    parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func( parse_p, parse_p->user_data ) ;
 		  }
 		}
 		| named_port_connections
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func ){
-		    parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func( parse_p->user_data ) ;
+		    parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func( parse_p, parse_p->user_data ) ;
 		  }
 		}
 		;
@@ -1697,7 +1697,7 @@ list_of_port_connections : ordered_port_connections
 name_of_instance: module_instance_identifier 
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_INSTNAME_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODINST_INSTNAME_F].f.str1_func( parse_p->user_data, $1->string_equiv ) ;
+		    parse_p->callbacks[SVERCB_MODINST_INSTNAME_F].f.str1_func( parse_p, parse_p->user_data, $1->string_equiv ) ;
 		  }
 		  sverilog_expect_expression(parse_p,FALSE) ;
 		}
@@ -1714,19 +1714,19 @@ named_port_connections: named_port_connection
 ordered_port_connection : /* empty */ 
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, NULL ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p, parse_p->user_data, NULL ) ;
 		  }
 		}
 		| expression
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, $1 ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p, parse_p->user_data, $1 ) ;
 		  }
 		}
 		| list_of_attribute_instances expression
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, $2 ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p, parse_p->user_data, $2 ) ;
 		  }
 		}
 		;
@@ -1734,25 +1734,25 @@ ordered_port_connection : /* empty */
 named_port_connection : DOT port_identifier named_open_paren named_close_paren
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p->user_data, $2->string_equiv, NULL ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p, parse_p->user_data, $2->string_equiv, NULL ) ;
 		  }
 		}
 		| DOT port_identifier named_open_paren expression named_close_paren
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p->user_data, $2->string_equiv, $4 ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p, parse_p->user_data, $2->string_equiv, $4 ) ;
 		  }
 		}
 		| list_of_attribute_instances DOT port_identifier named_open_paren named_close_paren
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p->user_data, $3->string_equiv, NULL ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p, parse_p->user_data, $3->string_equiv, NULL ) ;
 		  }
 		}
 		| list_of_attribute_instances DOT port_identifier named_open_paren expression named_close_paren
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p->user_data, $3->string_equiv, $5 ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p, parse_p->user_data, $3->string_equiv, $5 ) ;
 		  }
 		}
 		;
@@ -1982,7 +1982,7 @@ list_of_net_assignments: net_assignment
 net_assignment	: net_lvalue EQ expression
 		{
 		  if( parse_p->callbacks[SVERCB_NET_ASSIGN_F].f.expr_op_func ){
-		    parse_p->callbacks[SVERCB_NET_ASSIGN_F].f.expr_op_func( parse_p->user_data, $1, $3, OPERATOR_ASSIGN ) ;
+		    parse_p->callbacks[SVERCB_NET_ASSIGN_F].f.expr_op_func( parse_p, parse_p->user_data, $1, $3, OPERATOR_ASSIGN ) ;
 		  }
 		}
 		;
@@ -2393,7 +2393,7 @@ expression_list : expression
 		| expression_list COMMA expression
 		{
 		  if( parse_p->callbacks[SVERCB_EXPR_ADD_CONCAT_F].f.expr_op_func ){
-		    $$ = parse_p->callbacks[SVERCB_EXPR_ADD_CONCAT_F].f.expr_op_func( parse_p, $1, $3, OPERATOR_CONCAT ) ;
+		    $$ = parse_p->callbacks[SVERCB_EXPR_ADD_CONCAT_F].f.expr_op_func( parse_p, parse_p->user_data, $1, $3, OPERATOR_CONCAT ) ;
 		  } else {
 		    $$ = NULL ;
 		  }
@@ -2494,7 +2494,7 @@ expression	: primary
 		| unary_operator attribute_instances primary
 		{
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $3, NULL, $1 ) ;
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, $3, NULL, $1 ) ;
 		  } else {
 		    $$ = NULL ;
 		  }
@@ -2502,7 +2502,7 @@ expression	: primary
 		| expression PLUS  attribute_instances expression
 		{
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $4, OPERATOR_PLUS ) ;
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, $1, $4, OPERATOR_PLUS ) ;
 		  } else {
 		    $$ = NULL ;
 		  }
@@ -2510,7 +2510,7 @@ expression	: primary
 		| expression MINUS attribute_instances expression
 		{
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $4, OPERATOR_MINUS ) ;
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, $1, $4, OPERATOR_MINUS ) ;
 		  } else {
 		    $$ = NULL ;
 		  }
@@ -2569,12 +2569,12 @@ range  		: expression COLON expression
 		{
 		  SVER_EXPRPTR range_expr_p ;
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    range_expr_p = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $3, OPERATOR_RANGE ) ;
+		    range_expr_p = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, $1, $3, OPERATOR_RANGE ) ;
 		  } else {
 		    range_expr_p = NULL ;
 		  }
 		  if( parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func ){
-		    $$ = parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p->user_data, range_expr_p ) ;
+		    $$ = parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p, parse_p->user_data, range_expr_p ) ;
 		  } else {
 		    $$ = NULL ;
 		  }
@@ -2588,7 +2588,7 @@ part_select_range: range
 indexed_range 	: expression PLUS COLON expression
 		{
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $4, OPERATOR_INDEXED_PLUS_RANGE ) ;
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, $1, $4, OPERATOR_INDEXED_PLUS_RANGE ) ;
 		  } else {
 		    $$ = NULL ;
 		  }
@@ -2596,7 +2596,7 @@ indexed_range 	: expression PLUS COLON expression
 	       	| expression MINUS COLON expression
 		{
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $4, OPERATOR_INDEXED_MINUS_RANGE ) ;
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, $1, $4, OPERATOR_INDEXED_MINUS_RANGE ) ;
 		  } else {
 		    $$ = NULL ;
 		  }
@@ -2698,7 +2698,7 @@ select 		: bit_select
 		| select bit_select
 		{
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $2, OPERATOR_INDEX ) ;
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, $1, $2, OPERATOR_INDEX ) ;
 		  } else {
 		    $$ = NULL ;
 		  }
@@ -2919,7 +2919,7 @@ hierarchical_identifier : SVID
 hierarchical_identifier_sub : SVID DOT SVID
 		{
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $3, OPERATOR_DOT ) ;
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, $1, $3, OPERATOR_DOT ) ;
 		  } else {
 		    $$ = NULL ;
 		  }
@@ -2927,7 +2927,7 @@ hierarchical_identifier_sub : SVID DOT SVID
 		| hierarchical_identifier_sub DOT SVID
 		{
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, $1, $3, OPERATOR_DOT ) ;
+		    $$ = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, $1, $3, OPERATOR_DOT ) ;
 		  } else {
 		    $$ = NULL ;
 		  }
@@ -2994,7 +2994,7 @@ module_instance_identifier      : SVID
 module_identifier: identifier 
 		{
 		  if( parse_p->callbacks[SVERCB_MODULE_NAME_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_NAME_F].f.str1_func( parse_p->user_data, $1->string_equiv ) ;
+		    parse_p->callbacks[SVERCB_MODULE_NAME_F].f.str1_func( parse_p, parse_p->user_data, $1->string_equiv ) ;
 		  }
 		  $$ = $1->string_equiv ;
 		}
@@ -3003,7 +3003,7 @@ module_identifier: identifier
 instance_module_identifier: identifier 
 		{
 		  if( parse_p->callbacks[SVERCB_MODINST_MODNAME_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MODNAME_F].f.str1_func( parse_p->user_data, $1->string_equiv ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MODNAME_F].f.str1_func( parse_p, parse_p->user_data, $1->string_equiv ) ;
 		  }
 		  sverilog_expect_expression(parse_p,TRUE) ;
 		}
