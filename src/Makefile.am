@@ -17,7 +17,7 @@ PUBLIC_HDRS = \
 
 libopen_sverilog_la_LDFLAGS = -version-info 1:0:0
 
-bin_PROGRAMS = testparser
+EXTRA_PROGRAMS = testparser
 
 testparser_SOURCES = main.c
 
@@ -49,4 +49,4 @@ install-data-hook:
 	  mkdir -p ${prefix}/include/verilog ; \
 	  cd $(srcdir)/../include/verilog; tar cvf - $(PUBLIC_HDRS) | (cd ${prefix}/include/verilog; tar xvf - ) ;
 
-
+testpgms: $(EXTRA_PROGRAMS)

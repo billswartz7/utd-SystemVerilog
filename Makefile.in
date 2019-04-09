@@ -810,7 +810,8 @@ standalone:
 	 --disable-shared --disable-autotools ; \
 	 make config; make; make install ) ;
 	(cd $(abs_top_srcdir)/modules/build/include ; \
-	 tar cvf - utd | (cd $(abs_top_srcdir)/include; tar xvf - ) ) ; 
+	 tar cvf - utd | (cd $(abs_top_srcdir)/include; tar xvf - ) ) ;  
+	(cd $(abs_top_builddir)/src; make testpgms )
 
 test:	
 	TEST_FILES=`find . -name *.v | sort`;\
