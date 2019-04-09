@@ -593,7 +593,7 @@ SVER_CALLBACK *sverilog_callback_funcs( SVERILOG_PARSEPTR parse_p, BOOL initiali
     return( parse_p->callbacks ) ;
 } /* end sverilog_callback_funcs() */
 
-static int sver_echo_string( void *user_data, char *string )
+static int sver_echo_string( SVERILOG_PARSEPTR parse_p, void *user_data, char *string )
 {
     fprintf( stderr, " %s", string ) ;
     return(0) ;
