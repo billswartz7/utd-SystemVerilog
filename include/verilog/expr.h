@@ -46,7 +46,7 @@ extern SVER_EXPRPTR sver_expr_add_index( SVERILOG_PARSEPTR parse_p, SVER_EXPRPTR
 
 extern SVER_EXPRPTR sver_expr_add_range( SVERILOG_PARSEPTR parse_p, SVER_EXPRPTR expr_p,char *rangei_string ) ;
 
-extern SVER_EXPRPTR sver_expr_merge_expressions( SVERILOG_PARSEPTR parse_p, 
+extern SVER_EXPRPTR sver_expr_merge_expressions( SVERILOG_PARSEPTR parse_p,void *user_data, 
 					         SVER_EXPRPTR e1_p, SVER_EXPRPTR e2_p, 
 				                 SVERILOG_OPERATOR_T op ) ;
 
