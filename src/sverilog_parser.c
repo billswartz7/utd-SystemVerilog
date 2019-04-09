@@ -1919,28 +1919,28 @@ yyreduce:
 case 7:
 {
 		  if( parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p->user_data, yyvsp[-2].string ) ;
+		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p, parse_p->user_data, yyvsp[-2].string ) ;
 		  }
 		}
 break;
 case 8:
 {
 		  if( parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p->user_data, yyvsp[-3].string ) ;
+		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p, parse_p->user_data, yyvsp[-3].string ) ;
 		  }
 		}
 break;
 case 9:
 {
 		  if( parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p->user_data, yyvsp[-2].string ) ;
+		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p, parse_p->user_data, yyvsp[-2].string ) ;
 		  }
 		}
 break;
 case 10:
 {
 		  if( parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p->user_data, yyvsp[-3].string ) ;
+		    parse_p->callbacks[SVERCB_MODULE_END_F].f.str1_func( parse_p, parse_p->user_data, yyvsp[-3].string ) ;
 		  }
 		}
 break;
@@ -1964,16 +1964,16 @@ case 36:
 		  SVER_EXPRPTR range_p ;
 		  range_p = yyvsp[0].expr ;
 		  if( parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p->user_data, yyvsp[-1].expr->string_equiv ) ;
+		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p, parse_p->user_data, yyvsp[-1].expr->string_equiv ) ;
 		  }
 		  if( range_p && parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p->user_data, range_p ) ;
+		    parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p, parse_p->user_data, range_p ) ;
 		  }
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, yyvsp[-1].expr ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p, parse_p->user_data, yyvsp[-1].expr ) ;
 		  }
 		  if( parse_p->callbacks[SVERCB_ANSI_PORT_DIR_F].f.port_dir_func ){
-		    parse_p->callbacks[SVERCB_ANSI_PORT_DIR_F].f.port_dir_func( parse_p->user_data, yyvsp[-2].direction ) ;
+		    parse_p->callbacks[SVERCB_ANSI_PORT_DIR_F].f.port_dir_func( parse_p, parse_p->user_data, yyvsp[-2].direction ) ;
 		  }
 		}
 break;
@@ -2005,63 +2005,63 @@ break;
 case 47:
 {
 		  if( parse_p->callbacks[SVERCB_PORT_CONCAT_END_F].f.void_func ){
-		    parse_p->callbacks[SVERCB_PORT_CONCAT_END_F].f.void_func( parse_p->user_data ) ;
+		    parse_p->callbacks[SVERCB_PORT_CONCAT_END_F].f.void_func( parse_p, parse_p->user_data ) ;
 		  }
 		}
 break;
 case 48:
 {
 		  if( parse_p->callbacks[SVERCB_PORT_CONCAT_START_F].f.void_func ){
-		    parse_p->callbacks[SVERCB_PORT_CONCAT_START_F].f.void_func( parse_p->user_data ) ;
+		    parse_p->callbacks[SVERCB_PORT_CONCAT_START_F].f.void_func( parse_p, parse_p->user_data ) ;
 		  }
 		}
 break;
 case 50:
 {
 		  if( parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p->user_data, yyvsp[0].expr->string_equiv ) ;
+		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p, parse_p->user_data, yyvsp[0].expr->string_equiv ) ;
 		  }
 		}
 break;
 case 51:
 {
 		  if( parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p->user_data, yyvsp[-1].expr->string_equiv ) ;
+		    parse_p->callbacks[SVERCB_MODULE_IOPORT_F].f.str1_func( parse_p, parse_p->user_data, yyvsp[-1].expr->string_equiv ) ;
 		  }
 		}
 break;
 case 52:
 {
 		  if( parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p->user_data, yyvsp[0].expr ) ;
+		    parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p, parse_p->user_data, yyvsp[0].expr ) ;
 		  }
 		}
 break;
 case 72:
 {
 		  if( parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func ){
-		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p->user_data,PORT_DIR_INOUT_T ) ;
+		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p, parse_p->user_data,PORT_DIR_INOUT_T ) ;
 		  }
 		}
 break;
 case 73:
 {
 		  if( parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func ){
-		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p->user_data,PORT_DIR_INPUT_T ) ;
+		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p, parse_p->user_data,PORT_DIR_INPUT_T ) ;
 		  }
 		}
 break;
 case 74:
 {
 		  if( parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func ){
-		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p->user_data,PORT_DIR_OUTPUT_T ) ;
+		    parse_p->callbacks[SVERCB_PORT_DIR_F].f.port_dir_func( parse_p, parse_p->user_data,PORT_DIR_OUTPUT_T ) ;
 		  }
 		}
 break;
 case 75:
 {
 		  if( parse_p->callbacks[SVERCB_MODNETS_END_F].f.void_func ){
-		    parse_p->callbacks[SVERCB_MODNETS_END_F].f.void_func( parse_p->user_data ) ;
+		    parse_p->callbacks[SVERCB_MODNETS_END_F].f.void_func( parse_p, parse_p->user_data ) ;
 		  }
 		  sverilog_expect_expression(parse_p,FALSE) ;
 		}
@@ -2069,63 +2069,63 @@ break;
 case 98:
 {
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_SUPPLY0 ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_SUPPLY0 ) ;
 		  }
 		}
 break;
 case 99:
 {
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_SUPPLY1 ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_SUPPLY1 ) ;
 		  }
 		}
 break;
 case 100:
 {
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRI ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_TRI ) ;
 		  }
 		}
 break;
 case 101:
 {
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRIAND ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_TRIAND ) ;
 		  }
 		}
 break;
 case 102:
 {
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRIOR ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_TRIOR ) ;
 		  }
 		}
 break;
 case 103:
 {
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRIREG ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_TRIREG ) ;
 		  }
 		}
 break;
 case 104:
 {
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRI0 ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_TRI0 ) ;
 		  }
 		}
 break;
 case 105:
 {
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_TRI1 ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_TRI1 ) ;
 		  }
 		}
 break;
 case 106:
 {
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_UWIRE ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_UWIRE ) ;
 		  }
 		  sverilog_expect_expression(parse_p,TRUE) ;
 		}
@@ -2133,7 +2133,7 @@ break;
 case 107:
 {
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_WIRE ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_WIRE ) ;
 		  }
 		  sverilog_expect_expression(parse_p,TRUE) ;
 		}
@@ -2141,28 +2141,28 @@ break;
 case 108:
 {
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_WAND ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_WAND ) ;
 		  }
 		}
 break;
 case 109:
 {
 		  if( parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func ){
-		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p->user_data,NET_TYPE_WOR ) ;
+		    parse_p->callbacks[SVERCB_NET_TYPE_F].f.net_type_func( parse_p, parse_p->user_data,NET_TYPE_WOR ) ;
 		  }
 		}
 break;
 case 148:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, yyvsp[0].expr ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p, parse_p->user_data, yyvsp[0].expr ) ;
 		  }
 		}
 break;
 case 149:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, yyvsp[-1].expr ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p, parse_p->user_data, yyvsp[-1].expr ) ;
 		  }
 		}
 break;
@@ -2209,21 +2209,21 @@ break;
 case 192:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func ){
-		    parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func( parse_p->user_data ) ;
+		    parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func( parse_p, parse_p->user_data ) ;
 		  }
 		}
 break;
 case 193:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func ){
-		    parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func( parse_p->user_data ) ;
+		    parse_p->callbacks[SVERCB_MODINST_END_CONNECTS_F].f.void_func( parse_p, parse_p->user_data ) ;
 		  }
 		}
 break;
 case 194:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_INSTNAME_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODINST_INSTNAME_F].f.str1_func( parse_p->user_data, yyvsp[0].expr->string_equiv ) ;
+		    parse_p->callbacks[SVERCB_MODINST_INSTNAME_F].f.str1_func( parse_p, parse_p->user_data, yyvsp[0].expr->string_equiv ) ;
 		  }
 		  sverilog_expect_expression(parse_p,FALSE) ;
 		}
@@ -2231,49 +2231,49 @@ break;
 case 199:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, NULL ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p, parse_p->user_data, NULL ) ;
 		  }
 		}
 break;
 case 200:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, yyvsp[0].expr ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p, parse_p->user_data, yyvsp[0].expr ) ;
 		  }
 		}
 break;
 case 201:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p->user_data, yyvsp[0].expr ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_F].f.expr_func( parse_p, parse_p->user_data, yyvsp[0].expr ) ;
 		  }
 		}
 break;
 case 202:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p->user_data, yyvsp[-2].expr->string_equiv, NULL ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p, parse_p->user_data, yyvsp[-2].expr->string_equiv, NULL ) ;
 		  }
 		}
 break;
 case 203:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p->user_data, yyvsp[-3].expr->string_equiv, yyvsp[-1].expr ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p, parse_p->user_data, yyvsp[-3].expr->string_equiv, yyvsp[-1].expr ) ;
 		  }
 		}
 break;
 case 204:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p->user_data, yyvsp[-2].expr->string_equiv, NULL ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p, parse_p->user_data, yyvsp[-2].expr->string_equiv, NULL ) ;
 		  }
 		}
 break;
 case 205:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p->user_data, yyvsp[-3].expr->string_equiv, yyvsp[-1].expr ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MNET_BIND_F].f.str1_expr_func( parse_p, parse_p->user_data, yyvsp[-3].expr->string_equiv, yyvsp[-1].expr ) ;
 		  }
 		}
 break;
@@ -2301,7 +2301,7 @@ break;
 case 212:
 {
 		  if( parse_p->callbacks[SVERCB_NET_ASSIGN_F].f.expr_op_func ){
-		    parse_p->callbacks[SVERCB_NET_ASSIGN_F].f.expr_op_func( parse_p->user_data, yyvsp[-2].expr, yyvsp[0].expr, OPERATOR_ASSIGN ) ;
+		    parse_p->callbacks[SVERCB_NET_ASSIGN_F].f.expr_op_func( parse_p, parse_p->user_data, yyvsp[-2].expr, yyvsp[0].expr, OPERATOR_ASSIGN ) ;
 		  }
 		}
 break;
@@ -2313,7 +2313,7 @@ break;
 case 215:
 {
 		  if( parse_p->callbacks[SVERCB_EXPR_ADD_CONCAT_F].f.expr_op_func ){
-		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_ADD_CONCAT_F].f.expr_op_func( parse_p, yyvsp[-2].expr, yyvsp[0].expr, OPERATOR_CONCAT ) ;
+		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_ADD_CONCAT_F].f.expr_op_func( parse_p, parse_p->user_data, yyvsp[-2].expr, yyvsp[0].expr, OPERATOR_CONCAT ) ;
 		  } else {
 		    yyval.expr = NULL ;
 		  }
@@ -2327,7 +2327,7 @@ break;
 case 218:
 {
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, yyvsp[0].expr, NULL, yyvsp[-2].operator ) ;
+		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, yyvsp[0].expr, NULL, yyvsp[-2].operator ) ;
 		  } else {
 		    yyval.expr = NULL ;
 		  }
@@ -2336,7 +2336,7 @@ break;
 case 219:
 {
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, yyvsp[-3].expr, yyvsp[0].expr, OPERATOR_PLUS ) ;
+		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, yyvsp[-3].expr, yyvsp[0].expr, OPERATOR_PLUS ) ;
 		  } else {
 		    yyval.expr = NULL ;
 		  }
@@ -2345,7 +2345,7 @@ break;
 case 220:
 {
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, yyvsp[-3].expr, yyvsp[0].expr, OPERATOR_MINUS ) ;
+		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, yyvsp[-3].expr, yyvsp[0].expr, OPERATOR_MINUS ) ;
 		  } else {
 		    yyval.expr = NULL ;
 		  }
@@ -2355,12 +2355,12 @@ case 249:
 {
 		  SVER_EXPRPTR range_expr_p ;
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    range_expr_p = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, yyvsp[-2].expr, yyvsp[0].expr, OPERATOR_RANGE ) ;
+		    range_expr_p = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, yyvsp[-2].expr, yyvsp[0].expr, OPERATOR_RANGE ) ;
 		  } else {
 		    range_expr_p = NULL ;
 		  }
 		  if( parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func ){
-		    yyval.expr = parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p->user_data, range_expr_p ) ;
+		    yyval.expr = parse_p->callbacks[SVERCB_PORT_RANGE_F].f.expr_func( parse_p, parse_p->user_data, range_expr_p ) ;
 		  } else {
 		    yyval.expr = NULL ;
 		  }
@@ -2369,7 +2369,7 @@ break;
 case 252:
 {
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, yyvsp[-3].expr, yyvsp[0].expr, OPERATOR_INDEXED_PLUS_RANGE ) ;
+		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, yyvsp[-3].expr, yyvsp[0].expr, OPERATOR_INDEXED_PLUS_RANGE ) ;
 		  } else {
 		    yyval.expr = NULL ;
 		  }
@@ -2378,7 +2378,7 @@ break;
 case 253:
 {
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, yyvsp[-3].expr, yyvsp[0].expr, OPERATOR_INDEXED_MINUS_RANGE ) ;
+		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, yyvsp[-3].expr, yyvsp[0].expr, OPERATOR_INDEXED_MINUS_RANGE ) ;
 		  } else {
 		    yyval.expr = NULL ;
 		  }
@@ -2417,7 +2417,7 @@ break;
 case 278:
 {
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, yyvsp[-1].expr, yyvsp[0].expr, OPERATOR_INDEX ) ;
+		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, yyvsp[-1].expr, yyvsp[0].expr, OPERATOR_INDEX ) ;
 		  } else {
 		    yyval.expr = NULL ;
 		  }
@@ -2518,7 +2518,7 @@ break;
 case 322:
 {
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, yyvsp[-2].expr, yyvsp[0].expr, OPERATOR_DOT ) ;
+		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, yyvsp[-2].expr, yyvsp[0].expr, OPERATOR_DOT ) ;
 		  } else {
 		    yyval.expr = NULL ;
 		  }
@@ -2527,7 +2527,7 @@ break;
 case 323:
 {
 		  if( parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func ){
-		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, yyvsp[-2].expr, yyvsp[0].expr, OPERATOR_DOT ) ;
+		    yyval.expr = parse_p->callbacks[SVERCB_EXPR_OP_F].f.expr_op_func( parse_p, parse_p->user_data, yyvsp[-2].expr, yyvsp[0].expr, OPERATOR_DOT ) ;
 		  } else {
 		    yyval.expr = NULL ;
 		  }
@@ -2536,7 +2536,7 @@ break;
 case 325:
 {
 		  if( parse_p->callbacks[SVERCB_MODULE_NAME_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODULE_NAME_F].f.str1_func( parse_p->user_data, yyvsp[0].expr->string_equiv ) ;
+		    parse_p->callbacks[SVERCB_MODULE_NAME_F].f.str1_func( parse_p, parse_p->user_data, yyvsp[0].expr->string_equiv ) ;
 		  }
 		  yyval.string = yyvsp[0].expr->string_equiv ;
 		}
@@ -2544,7 +2544,7 @@ break;
 case 326:
 {
 		  if( parse_p->callbacks[SVERCB_MODINST_MODNAME_F].f.str1_func ){
-		    parse_p->callbacks[SVERCB_MODINST_MODNAME_F].f.str1_func( parse_p->user_data, yyvsp[0].expr->string_equiv ) ;
+		    parse_p->callbacks[SVERCB_MODINST_MODNAME_F].f.str1_func( parse_p, parse_p->user_data, yyvsp[0].expr->string_equiv ) ;
 		  }
 		  sverilog_expect_expression(parse_p,TRUE) ;
 		}
