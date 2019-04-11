@@ -16,6 +16,9 @@ OR_ENABLE_SHARED
 # See if we have defined the UTD path
 UTD_PATH_CONFIG
 
+# See if we are in OpenRoad hierarchy
+OPENROAD_ROOT
+
 # Checks for header files.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC

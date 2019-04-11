@@ -635,6 +635,8 @@ LTLIBOBJS
 MCC
 UTDLIB_AUTOTOOLS
 LIBOBJS
+OPENROAD_INCLUDE
+OPENROAD_ROOT_DIR
 OPENROAD_THREAD_BUILD
 CXXCPP
 CPP
@@ -771,6 +773,7 @@ with_sysroot
 enable_libtool_lock
 enable_threads
 with_utdlib
+with_openroad
 enable_autotools
 '
       ac_precious_vars='build_alias
@@ -1432,6 +1435,7 @@ Optional Packages:
   --with-sysroot[=DIR]    Search for dependent libraries within DIR (or the
                           compiler's sysroot if not specified).
   --with-utdlib           directory containing the UTD common library (libutd)
+  --with-openroad         directory containing the OpenRoad root directory
 
 Some influential environment variables:
   CC          C compiler command
@@ -15866,6 +15870,45 @@ $as_echo "Can't find UTD configuration definitions. Use --with-utdlib to specify
 	UTDLIB_ROOT_DIR="${ac_cv_c_utdlib}"
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: found ${UTDLIB_ROOT_DIR}/include/utd/config.h" >&5
 $as_echo "found ${UTDLIB_ROOT_DIR}/include/utd/config.h" >&6; }
+    fi
+
+
+# See if we are in OpenRoad hierarchy
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OpenRoad root path" >&5
+$as_echo_n "checking for OpenRoad root path... " >&6; }
+
+# Check whether --with-openroad was given.
+if test "${with_openroad+set}" = set; then :
+  withval=$with_openroad; with_openroad="${withval}"
+fi
+
+    if ${ac_cv_c_openroad+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+
+	# First check to see if --with-openroad was specified.
+	if test x"${with_openroad}" != x ; then
+	  ac_cv_c_openroad="`(cd "${with_openroad}"; pwd)`"
+	fi
+
+
+fi
+
+
+    if test x"${ac_cv_c_openroad}" = x ; then
+	OPENROAD_ROOT_DIR="# no OpenRoad directory found"
+	OPENROAD_INCLUDE=""
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: OPENROAD root directory not specified. Use --with-openroad to specify the OpenRoad root directory containing setenv.sh" >&5
+$as_echo "OPENROAD root directory not specified. Use --with-openroad to specify the OpenRoad root directory containing setenv.sh" >&6; }
+    else
+	OPENROAD_ROOT_DIR="${ac_cv_c_openroad}"
+	OPENROAD_INCLUDE="-I${ac_cv_c_openroad}/include"
+
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: given ${OPENROAD_ROOT_DIR}" >&5
+$as_echo "given ${OPENROAD_ROOT_DIR}" >&6; }
     fi
 
 

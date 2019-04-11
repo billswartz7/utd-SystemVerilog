@@ -145,3 +145,31 @@ AC_DEFUN([UTD_ENABLE_AUTOTOOLS], [
     AC_SUBST(MAKEINFO)
     AC_SUBST(UTDLIB_AUTOTOOLS)
 ])
+
+AC_DEFUN([OPENROAD_ROOT], [
+    AC_MSG_CHECKING([for OpenRoad root path])
+    AC_ARG_WITH(openroad,
+	AC_HELP_STRING([--with-openroad],
+	    [directory containing the OpenRoad root directory]),
+	with_openroad="${withval}")
+    AC_CACHE_VAL(ac_cv_c_openroad,[
+
+	# First check to see if --with-openroad was specified.
+	if test x"${with_openroad}" != x ; then
+	  ac_cv_c_openroad="`(cd "${with_openroad}"; pwd)`"
+	fi
+
+    ])
+
+    if test x"${ac_cv_c_openroad}" = x ; then
+	OPENROAD_ROOT_DIR="# no OpenRoad directory found"
+	OPENROAD_INCLUDE=""
+	AC_MSG_RESULT([OPENROAD root directory not specified. Use --with-openroad to specify the OpenRoad root directory containing setenv.sh])
+    else
+	OPENROAD_ROOT_DIR="${ac_cv_c_openroad}"
+	OPENROAD_INCLUDE="-I${ac_cv_c_openroad}/include"
+	AC_SUBST(OPENROAD_ROOT_DIR)
+	AC_SUBST(OPENROAD_INCLUDE)
+	AC_MSG_RESULT([given ${OPENROAD_ROOT_DIR}])
+    fi
+])

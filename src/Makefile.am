@@ -36,7 +36,7 @@ AM_CPPFLAGS =\
 # Need to store off config data for other programs
 # Now done in top level configure.
 
-AM_CFLAGS = -g $(X_CFLAGS) -DDEBUG
+AM_CFLAGS = -g $(X_CFLAGS) -DDEBUG @OPENROAD_INCLUDE@
 
 AM_CXXFLAGS = -g $(X_CFLAGS)
 
