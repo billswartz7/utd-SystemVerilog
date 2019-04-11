@@ -156,7 +156,7 @@ AC_DEFUN([OPENROAD_ROOT], [
 
 	# First check to see if --with-openroad was specified.
 	if test x"${with_openroad}" != x ; then
-	  ac_cv_c_openroad="`(cd "${with_openroad}"; pwd)`"
+	  ac_cv_c_openroad="${with_openroad}"
 	fi
 
     ])
