@@ -42,6 +42,12 @@ extern void sverilog_parser_set_preprocess_output( SVERILOG_PARSEPTR parse_p,
 //! Get the number of errors found.
 extern int sverilog_parser_get_errors( SVERILOG_PARSEPTR parse_p ) ;
 
+//! Get the current line number.
+extern int sverilog_parse_lineno( SVERILOG_PARSEPTR parse_p ) ;
+
+//! Get the current file name
+extern const char * sverilog_parse_filename( SVERILOG_PARSEPTR parse_p ) ;
+
 //! Add the default callbacks.  User may added use data.
 extern SVER_CALLBACKPTR sverilog_parser_add_default_callbacks( SVERILOG_PARSEPTR parse_p,
                                                                void *user_data ) ;
