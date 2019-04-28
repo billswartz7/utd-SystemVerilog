@@ -84,6 +84,23 @@ int sverilog_parse_file( SVERILOG_PARSEPTR parse_p, char *filename )
     return(result) ;
 } /* end sverilog_parse_file() */
 
+//! Get the current line number.
+int sverilog_parse_lineno( SVERILOG_PARSEPTR parse_p )
+{
+    if( parse_p && parse_p->line_num ){
+      return( *(parse_p->line_num) ) ;
+    }
+    return(0) ;
+} /* end sverilog_parse_lineno() */
+
+//! Get the current file name
+const char * sverilog_parse_filename( SVERILOG_PARSEPTR parse_p )
+{ 
+    if( parse_p && parse_p->file_name ){
+      return( parse_p->file_name ) ;
+    }
+    return("") ;
+} /* end sverilog_parse_filename() */
 
 void sverilog_parser_set_preprocess_output( SVERILOG_PARSEPTR parse_p,
                                             FILE *fout )
