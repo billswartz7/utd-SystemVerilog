@@ -294,7 +294,7 @@ NUM_UNSIGNED        {DIGIT_DECIMAL}({UNDERSCORE}|{DIGIT_DECIMAL})*
 
 SYSTEM_ID           \$[a-zA-Z0-9_\$]+
 SIMPLE_ID           [a-zA-Z_][a-zA-Z0-9_$]*
-ESCAPED_ID          \\{SIMPLE_ID}
+ESCAPED_ID          \\[^\n\t\b\r ]* 
 MACRO_IDENTIFIER    `{SIMPLE_ID}
 
 MACRO_TEXT          .*\n
@@ -810,12 +810,12 @@ Space  	    	    [\n\r\t\b ]
     EMIT_TOKEN(parse_p,SYSTEM_ID,yytext, sverilog_leng);
 }
 
-<in_expression>\[[0-9]*\] {
+<in_expression>[ ]*\[[0-9]*\] {
     BEGIN(INITIAL) ;
     sverilog_lval.expr = sver_expr_add_index(parse_p,sverilog_lval.expr,yytext) ; 
     EMIT_TOKEN(parse_p,SVID,yytext, sverilog_leng);
 }
-<in_expression>\[[0-9:]*\] {
+<in_expression>[ ]*\[[0-9:]*\] {
     BEGIN(INITIAL) ;
     sverilog_lval.expr = sver_expr_add_range(parse_p,sverilog_lval.expr,yytext) ; 
     EMIT_TOKEN(parse_p,SVID,yytext, sverilog_leng);
