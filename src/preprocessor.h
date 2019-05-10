@@ -65,6 +65,9 @@ extern VERILOG_PREPROC_COND_CONTEXTPTR
 - IF/ELSE pre-processor directives.
 - Timescale directives
 */
+
+#include <verilog/callbacks.h>
+
 typedef struct sverilog_parse_context_rec {
     BOOL emit ;           		//!< Only emit tokens iff true.
     BOOL allow_sv_keys ;       		//!< Allow system verilog keywords

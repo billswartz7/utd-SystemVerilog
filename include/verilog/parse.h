@@ -11,7 +11,9 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#ifndef SVERILOG_INTERNAL_DEFS
 typedef struct sverilog_parse_context_rec *SVERILOG_PARSEPTR ;
+#endif /* SVERILOG_INTERNAL_DEFS */
 
 /* -----------------------------------------------------------------
  * These are options to the parser.  Strict verilog option ignores

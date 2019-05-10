@@ -1387,6 +1387,7 @@ goto find_rule; \
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *sverilog_text;
+    #define SVERILOG_INTERNAL_DEFS
     #include <verilog/sverilog.h>
     #include "preprocessor.h"
     #include "sverilog.tab.h"

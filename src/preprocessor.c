@@ -3,15 +3,16 @@
 @brief Contains function implementations to support source code preprocessing.
 */
 
+#define SVERILOG_INTERNAL_DEFS
 #include <sverilog_config.h>
 #include <utd/file.h>
 #include <utd/hash.h>
 #include <utd/string.h>
 #include <verilog/sverilog.h>
-#include <verilog/parse.h>
 #include "preprocessor.h"
 #include <verilog/expr.h>
 #include "sverilog_scanner.h"
+#include <verilog/parse.h>
 
 SVERILOG_PARSEPTR sverilog_parser_init( SVERILOG_OPTIONS_T options )
 {
