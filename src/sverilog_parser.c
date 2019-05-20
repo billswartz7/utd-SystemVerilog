@@ -2166,6 +2166,34 @@ case 149:
 		  }
 		}
 break;
+case 150:
+{
+		  if( parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func ){
+		    parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func( parse_p, parse_p->user_data, yyvsp[-1].expr, yyvsp[0].expr, NULL ) ;
+		  }
+		}
+break;
+case 151:
+{
+		  if( parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func ){
+		    parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func( parse_p, parse_p->user_data, yyvsp[-3].expr, yyvsp[-2].expr, yyvsp[0].expr ) ;
+		  }
+		}
+break;
+case 152:
+{
+		  if( parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func ){
+		    parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func( parse_p, parse_p->user_data, yyvsp[0].expr, NULL, NULL ) ;
+		  }
+		}
+break;
+case 153:
+{
+		  if( parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func ){
+		    parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func( parse_p, parse_p->user_data, yyvsp[-2].expr, NULL, yyvsp[0].expr ) ;
+		  }
+		}
+break;
 case 155:
 {
 		  yyval.expr = yyvsp[-1].expr ;

@@ -16,6 +16,8 @@ typedef SVER_EXPRPTR SVER_CALLBACK_expr( struct sverilog_parse_context_rec *s_p,
 typedef SVER_EXPRPTR SVER_CALLBACK_str1_expr( struct sverilog_parse_context_rec *s_p,void *ud, char *string,SVER_EXPRPTR expr_p ) ;
 typedef SVER_EXPRPTR SVER_CALLBACK_expr_op( struct sverilog_parse_context_rec *s_p,void *ud, SVER_EXPRPTR expr1_p, SVER_EXPRPTR expr2_p, 
                                             SVERILOG_OPERATOR_T op) ;
+typedef SVER_EXPRPTR SVER_CALLBACK_expr3( struct sverilog_parse_context_rec *s_p,void *ud, SVER_EXPRPTR expr1_p, SVER_EXPRPTR expr2_p, 
+                                          SVER_EXPRPTR expr3 ) ;
 
 /* -----------------------------------------------------------------
  * Define the callback functions.
@@ -27,6 +29,7 @@ typedef struct sverilog_callback_rec {
     SVER_CALLBACK_arg2s		*str2_func ;
     SVER_CALLBACK_expr		*expr_func ;
     SVER_CALLBACK_expr_op	*expr_op_func ;
+    SVER_CALLBACK_expr3		*expr3_func ;
     SVER_CALLBACK_str1_expr	*str1_expr_func ;
     SVER_CALLBACK_net_type	*net_type_func ;
     SVER_CALLBACK_port_dir	*port_dir_func ;
@@ -57,10 +60,11 @@ typedef enum {
   SVERCB_MODINST_END_CONNECTS_F =	16,	/* type SVER_CALLBACK_arg1s */
   SVERCB_NET_TYPE_F = 			17,	/* type SVER_CALLBACK_net_type */
   SVERCB_NET_ASSIGN_F = 		18,	/* type SVER_CALLBACK_expr_op */
-  SVERCB_MODULE_END_F = 		19	/* type SVER_CALLBACK_arg1s */
+  SVERCB_NET_DECL_F = 			19,	/* type SVER_CALLBACK_expr3 */
+  SVERCB_MODULE_END_F = 		20	/* type SVER_CALLBACK_arg1s */
 } SVER_CALLBACK_T ;
 
-#define SVER_CALLBACK_LAST_FUNC	     	19
+#define SVER_CALLBACK_LAST_FUNC	     	20
 #define SVER_CALLBACK_NUM_FUNCS	       (SVER_CALLBACK_LAST_FUNC+1)
 
 

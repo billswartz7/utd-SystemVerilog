@@ -1189,9 +1189,29 @@ unpacked_port_identifier: port_identifier
 /* A.2.4 Declaration Assignments */
 
 net_decl_assignment: identifier unpacked_dimension_o
+		{
+		  if( parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func ){
+		    parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func( parse_p, parse_p->user_data, $1, $2, NULL ) ;
+		  }
+		}
 		| identifier unpacked_dimension_o EQ expression 
+		{
+		  if( parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func ){
+		    parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func( parse_p, parse_p->user_data, $1, $2, $4 ) ;
+		  }
+		}
 		| SVID
+		{
+		  if( parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func ){
+		    parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func( parse_p, parse_p->user_data, $1, NULL, NULL ) ;
+		  }
+		}
 		| SVID EQ expression
+		{
+		  if( parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func ){
+		    parse_p->callbacks[SVERCB_NET_DECL_F].f.expr3_func( parse_p, parse_p->user_data, $1, NULL, $3 ) ;
+		  }
+		}
 		;
 
 /*
