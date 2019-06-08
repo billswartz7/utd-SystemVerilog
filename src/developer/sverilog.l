@@ -650,10 +650,10 @@ Space  	    	    [\n\r\t\b ]
 {B_NOR}                {sverilog_lval.operator=OPERATOR_B_NOR  ; EMIT_TOKEN(parse_p,B_NOR, "~|", sverilog_leng );}
 {TERNARY}              {sverilog_lval.operator=OPERATOR_TERNARY; EMIT_TOKEN(parse_p,TERNARY, "?", sverilog_leng );}
 
-{BASE_DECIMAL}         {EMIT_TOKEN(parse_p,DEC_BASE, "d", sverilog_leng );}
-{BASE_HEX}             {BEGIN(in_hex_val); EMIT_TOKEN(parse_p,HEX_BASE, "h", sverilog_leng);}
-{BASE_OCTAL}           {BEGIN(in_oct_val); EMIT_TOKEN(parse_p,OCT_BASE, "o", sverilog_leng);}
-{BASE_BINARY}          {BEGIN(in_bin_val); EMIT_TOKEN(parse_p,BIN_BASE, "b", sverilog_leng );}
+{BASE_DECIMAL}         {sverilog_lval.string = yytext; EMIT_TOKEN(parse_p,DEC_BASE, "d", sverilog_leng );}
+{BASE_HEX}             {BEGIN(in_hex_val); sverilog_lval.string = yytext; EMIT_TOKEN(parse_p,HEX_BASE, "h", sverilog_leng);}
+{BASE_OCTAL}           {BEGIN(in_oct_val); sverilog_lval.string = yytext; EMIT_TOKEN(parse_p,OCT_BASE, "o", sverilog_leng);}
+{BASE_BINARY}          {BEGIN(in_bin_val); sverilog_lval.string = yytext; EMIT_TOKEN(parse_p,BIN_BASE, "b", sverilog_leng );}
 
 <in_bin_val>{BIN_VALUE} {BEGIN(INITIAL); sverilog_lval.string = yytext; EMIT_TOKEN(parse_p,BIN_VALUE,"b", sverilog_leng );}
 <in_oct_val>{OCT_VALUE} {BEGIN(INITIAL); sverilog_lval.string = yytext; EMIT_TOKEN(parse_p,OCT_VALUE,"o", sverilog_leng );}
