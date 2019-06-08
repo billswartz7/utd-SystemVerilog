@@ -34,9 +34,9 @@ extern void sver_expr_init( SVERILOG_PARSEPTR parse_p ) ;
 
 extern void sver_expr_free( SVERILOG_PARSEPTR parse_p ) ;
 
-extern SVER_EXPRPTR sver_expr_start_int_expr( SVERILOG_PARSEPTR parse_p, LONG data, INT type ) ;
+extern SVER_EXPRPTR sver_expr_start_int_expr( SVERILOG_PARSEPTR parse_p, LONG data, char *str, INT type ) ;
 
-extern SVER_EXPRPTR sver_expr_start_float_expr( SVERILOG_PARSEPTR parse_p, DOUBLE data, INT type ) ;
+extern SVER_EXPRPTR sver_expr_start_float_expr( SVERILOG_PARSEPTR parse_p, DOUBLE data, char *str, INT type ) ;
 
 extern SVER_EXPRPTR sver_expr_start_string_expr( SVERILOG_PARSEPTR parse_p, char *data, INT type ) ;
 
