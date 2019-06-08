@@ -25,7 +25,7 @@ void sver_expr_free( SVERILOG_PARSEPTR parse_p )
     UTDdstring_free( &parse_p->temp_buf ) ;
 } /* end sver_expr_free() */
 
-SVER_EXPRPTR sver_expr_start_int_expr( SVERILOG_PARSEPTR parse_p, LONG data, INT type )
+SVER_EXPRPTR sver_expr_start_int_expr( SVERILOG_PARSEPTR parse_p, LONG data, char *string_rep, INT type )
 {
     SVER_EXPRPTR expr_p ;			/* start an expression */
     SVER_EXPR_TYPEPTR expr_type_p ;		/* the type of an expression */
@@ -37,7 +37,7 @@ SVER_EXPRPTR sver_expr_start_int_expr( SVERILOG_PARSEPTR parse_p, LONG data, INT
     expr_type_p = UTDPOOL_CALLOC( parse_p->expr_type_pool, SVER_EXPR_TYPE ) ;
     expr_type_p->token_type = type ;
     expr_type_p->data.int_value = data ;
-    string_equiv = UTDdstring_printf( &parse_p->temp_buf, "%ld", data ) ;
+    string_equiv = UTDdstring_append( &parse_p->temp_buf, string_rep, -1 ) ;
     string_added = UTDstringhash_add( parse_p->strings, string_equiv, NULL ) ;
     expr_p->string_equiv = string_added ;
     expr_p->num_vals = 1 ;
@@ -46,7 +46,7 @@ SVER_EXPRPTR sver_expr_start_int_expr( SVERILOG_PARSEPTR parse_p, LONG data, INT
     return(expr_p) ;
 } /* end sver_expr_start_int_expr() */
 
-SVER_EXPRPTR sver_expr_start_float_expr( SVERILOG_PARSEPTR parse_p, DOUBLE data, INT type )
+SVER_EXPRPTR sver_expr_start_float_expr( SVERILOG_PARSEPTR parse_p, DOUBLE data, char *string_rep, INT type )
 {
     SVER_EXPRPTR expr_p ;			/* start an expression */
     SVER_EXPR_TYPEPTR expr_type_p ;		/* the type of an expression */
@@ -58,7 +58,7 @@ SVER_EXPRPTR sver_expr_start_float_expr( SVERILOG_PARSEPTR parse_p, DOUBLE data,
     expr_type_p = UTDPOOL_CALLOC( parse_p->expr_type_pool, SVER_EXPR_TYPE ) ;
     expr_type_p->token_type = type ;
     expr_type_p->data.double_value = data ;
-    string_equiv = UTDdstring_printf( &parse_p->temp_buf, "%.6lf", data ) ;
+    string_equiv = UTDdstring_append( &parse_p->temp_buf, string_rep, -1 ) ;
     string_added = UTDstringhash_add( parse_p->strings, string_equiv, NULL ) ;
     expr_p->string_equiv = string_added ;
     expr_p->num_vals = 1 ;
@@ -242,6 +242,24 @@ SVER_EXPRPTR sver_expr_merge_expressions( SVERILOG_PARSEPTR parse_p,void *user_d
       UTDdstring_reinit( &parse_p->temp_buf ) ;
       UTDdstring_printf( &parse_p->temp_buf, "[%d:%d]", merged_token_p->data.start_index,
 						        merged_token_p->end_index ) ;
+      string_added = UTDstringhash_add( parse_p->strings, UTDdstring_value(&parse_p->temp_buf), NULL ) ;
+      merged_p->string_equiv = string_added ;
+    } else if( op == OPERATOR_CONCAT ){
+      merged_p->num_vals = 1 ;
+      merged_p->tokens = UTDVECTOR_MALLOC( 1, merged_p->num_vals, SVER_EXPR_TYPEPTR ) ;
+      merged_token_p = UTDPOOL_CALLOC( parse_p->expr_type_pool, SVER_EXPR_TYPE ) ;
+      merged_p->tokens[1] = merged_token_p ;
+      if( e1_p && e1_p->string_equiv ){
+	UTDdstring_append( &parse_p->temp_buf, e1_p->string_equiv, -1 ) ;
+      } else {
+	UTDmsgf(ERRMSG,routine,MSG_AT,"unexpected NULL for string 1\n" ) ;
+      }
+      UTDdstring_append( &parse_p->temp_buf, ",", -1 ) ;
+      if( e2_p && e2_p->string_equiv ){
+	UTDdstring_append( &parse_p->temp_buf, e2_p->string_equiv, -1 ) ;
+      } else {
+	UTDmsgf(ERRMSG,routine,MSG_AT,"unexpected NULL for string 2\n" ) ;
+      }
       string_added = UTDstringhash_add( parse_p->strings, UTDdstring_value(&parse_p->temp_buf), NULL ) ;
       merged_p->string_equiv = string_added ;
     } else {
