@@ -48,11 +48,10 @@
 /* token types */
 %union {
     char        		*string ;
-    int				integer ;
-    double                      real ;
     SVERILOG_OPERATOR_T 	operator ;
     SVERILOG_PORT_DIR_T		direction ;
     SVER_EXPRPTR 		expr ;
+    SVER_NUMBER 		number ;
 }
 
 %token <string> ANY
@@ -306,8 +305,7 @@
 %token <keyword> KW_UNIT
 %token <expr> SVID
 
-%type <real> fixed_point_number
-%type <integer> integer_number decimal_number unsigned_number
+%type <number> integer_number decimal_number unsigned_number fixed_point_number
 %type <operator> unary_operator
 %type <direction> port_direction net_port_header
 %type <expr> identifier port_identifier module_instance_identifier number qstring
@@ -319,6 +317,7 @@
 %type <expr> unpacked_dimension_list unpacked_dimension unpacked_dimension_o
 %type <expr> packed_dimension_list packed_dimension packed_dimension_o
 %type <string> module_ansi_header module_nonansi_header module_identifier
+
 
 %start grammar_begin
 
@@ -2779,76 +2778,87 @@ unary_operator	: PLUS
 
 number 		: integer_number
 		{
-		   $$ = sver_expr_start_int_expr( parse_p, $1, SVER_TOKEN_INTEGER_T ) ;
+		   $$ = sver_expr_start_int_expr( parse_p, $1.int_rep, $1.string_rep, SVER_TOKEN_INTEGER_T ) ;
 		}
 	 	| NUM_REAL /* real_number */
 		{
 		   double convert_num ;
-		   convert_num = atof( $1 ) ; /* FIXME math */
-		   $$ = sver_expr_start_float_expr( parse_p, convert_num, SVER_TOKEN_REAL_T ) ;
+		   char *string_rep ;
+		   string_rep = sver_convert_real( parse_p, $1, &convert_num ) ;
+		   $$ = sver_expr_start_float_expr( parse_p, convert_num, string_rep, SVER_TOKEN_REAL_T ) ;
 		}
 		;
 
 integer_number	: decimal_number
 	       	| OCT_VALUE /* octal_number */
 		{
-		  $$ = atoi( $1 ) ; /* FIXME math */
+		  $$.string_rep = sver_convert_integer( parse_p, 8, $1, &($$.int_rep) ) ;
 		}
 		| BIN_VALUE /* binary_number */
 		{
-		  $$ = atoi( $1 ) ; /* FIXME math */
+		  $$.string_rep = sver_convert_integer( parse_p, 2, $1, &($$.int_rep) ) ;
 		}
 		| HEX_VALUE /* hex_number */
 		{
-		  $$ = atoi( $1 ) ; /* FIXME math */
+		  $$.string_rep = sver_convert_integer( parse_p, 16, $1, &($$.int_rep) ) ;
 		}
 		;
 
 decimal_number	: unsigned_number
 		| BIN_BASE BIN_VALUE
 		{
-		  $$ = atoi($2) ;  /* FIXMEM math */
+		  sver_convert_integer( parse_p, 2, $2, &($$.int_rep) ) ;
+		  $$.string_rep = $1 ;
 		}
 		| HEX_BASE HEX_VALUE
 		{
-		  $$ = atoi($2) ;  /* FIXMEM math */
+		  sver_convert_integer( parse_p, 16, $2, &($$.int_rep) ) ;
+		  $$.string_rep = $1 ;
 		}
 		| OCT_BASE OCT_VALUE
 		{
-		  $$ = atoi($2) ;  /* FIXMEM math */
+		  sver_convert_integer( parse_p, 8, $2, &($$.int_rep) ) ;
+		  $$.string_rep = $1 ;
 		}
 		| DEC_BASE UNSIGNED_NUMBER
 		{
-		  $$ = atoi($2) ;  /* FIXMEM math */
+		  sver_convert_integer( parse_p, 10, $2, &($$.int_rep) ) ;
+		  $$.string_rep = $1 ;
 		}
 		| UNSIGNED_NUMBER BIN_BASE BIN_VALUE
 		{
-		  $$ = atoi($3) ;  /* FIXMEM math */
+		  sver_convert_integer( parse_p, 2, $3, &($$.int_rep) ) ;
+		  $$.string_rep = $1 ;
 		}
 		| UNSIGNED_NUMBER HEX_BASE HEX_VALUE
 		{
-		  $$ = atoi($3) ;  /* FIXMEM math */
+		  sver_convert_integer( parse_p, 16, $3, &($$.int_rep) ) ;
+		  $$.string_rep = $1 ;
 		}
 		| UNSIGNED_NUMBER OCT_BASE OCT_VALUE
 		{
-		  $$ = atoi($3) ;  /* FIXMEM math */
+		  sprintf( parse_p->number_buf, "%s%s%s", $1, $2, 
+		           sver_convert_integer( parse_p, 8, $3, &($$.int_rep) ) ) ;
+		  $$.string_rep = parse_p->number_buf ;
 		}
 		| UNSIGNED_NUMBER DEC_BASE UNSIGNED_NUMBER
 		{
-		  $$ = atoi($3) ;  /* FIXMEM math */
+		  sprintf( parse_p->number_buf, "%s%s%s", $1, $2, 
+		           sver_convert_integer( parse_p, 10, $3, &($$.int_rep) ) ) ;
+		  $$.string_rep = parse_p->number_buf ;
 		}
 		;
 
 unsigned_number : UNSIGNED_NUMBER
 		{
-		  $$ = atoi( $1 ) ; /* FIXME_MATH */
+		  $$.string_rep = sver_convert_integer( parse_p, 10, $1, &($$.int_rep) ) ;
 		}
 		;
 
 
 fixed_point_number : NUM_REAL
 		{
-		  $$ = atof( $1 ) ; /* FIXME_MATH */
+		  $$.string_rep = sver_convert_real( parse_p, $1, &($$.float_rep) ) ;
 		}
 		;
 
