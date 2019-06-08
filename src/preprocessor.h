@@ -68,6 +68,15 @@ extern VERILOG_PREPROC_COND_CONTEXTPTR
 
 #include <verilog/callbacks.h>
 
+/*
+@brief Numbers have two representation - string and float/integer 
+*/
+typedef struct sver_number_rec {
+  LONG int_rep ;
+  DOUBLE float_rep ;
+  char *string_rep ;
+} SVER_NUMBER, *SVER_NUMBERPTR ;
+
 typedef struct sverilog_parse_context_rec {
     BOOL emit ;           		//!< Only emit tokens iff true.
     BOOL allow_sv_keys ;       		//!< Allow system verilog keywords
@@ -93,6 +102,8 @@ typedef struct sverilog_parse_context_rec {
     char **scanner_text ;		//!< low level scanner text
     char *file_name ;			//!< current open filename
     char last_file_name[LAST_FILE_LEN] ;//! < remember last file name
+    char number_buf[80] ;		//! < used for building string rep from numbers
+    char number_base[80] ;		//! < used for building string rep from numbers
     SVER_CALLBACK callbacks[SVER_CALLBACK_NUM_FUNCS] ;//! < callback functions 
     void *user_data ;			//! < callback user data
 } SVERILOG_PARSE, *SVERILOG_PARSEPTR ;
@@ -312,6 +323,15 @@ extern void sverilog_set_out  (FILE * out_str  ) ;
 extern SVER_CALLBACK *sverilog_callback_funcs(SVERILOG_PARSEPTR parse_p, 
                                               BOOL initialize) ;
 
+/* -----------------------------------------------------------------
+ * Converts a string to the proper string and integer representation.
+ * ----------------------------------------------------------------- */
+extern char * sver_convert_integer( SVERILOG_PARSEPTR parse_p, INT base, char *unterminated_string, LONG *int_rep ) ;
+
+/* -----------------------------------------------------------------
+ * Converts a string to the proper string and floating point representation.
+ * ----------------------------------------------------------------- */
+extern char * sver_convert_real( SVERILOG_PARSEPTR parse_p, char *unterminated_string, DOUBLE *float_rep ) ;
 
 /*! @} */
 

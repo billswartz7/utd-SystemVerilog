@@ -637,3 +637,52 @@ SVER_CALLBACKPTR sverilog_parser_add_default_callbacks( SVERILOG_PARSEPTR parse_
     return(NULL) ;
 
 } /* end sverilog_parser_add_default_callbacks() */
+
+
+/* -----------------------------------------------------------------
+ * The input string is a possibly unterminated string which has as
+ * the prefix an integer representation.  We need to find the end.
+ * ----------------------------------------------------------------- */
+char * sver_convert_integer( SVERILOG_PARSEPTR parse_p, INT base, char *unterminated_string, LONG *int_rep )
+{
+    char *end_ptr ;		/* find end of the integer */
+    INT len ;			/* length of string */
+
+    if( int_rep ){
+      *int_rep = strtol( unterminated_string, &end_ptr, base ) ;
+      if( *end_ptr == EOS ){
+	/* The full string */
+	strcpy( parse_p->number_base, unterminated_string ) ;
+      } else {
+	len = end_ptr - unterminated_string ;
+	strncpy( parse_p->number_base, unterminated_string, len ) ;
+	parse_p->number_base[len] = EOS ;
+      }
+      return( parse_p->number_base ) ;
+    }
+    return(NULL) ;
+} /* end sver_convert_integer() */
+
+/* -----------------------------------------------------------------
+ * The input string is a possibly unterminated string which has as
+ * the prefix a floating point representation.  We need to find the end.
+ * ----------------------------------------------------------------- */
+char * sver_convert_real( SVERILOG_PARSEPTR parse_p, char *unterminated_string, DOUBLE *float_rep )
+{
+    char *end_ptr ;		/* find end of the integer */
+    INT len ;			/* length of string */
+
+    if( float_rep ){
+      *float_rep = strtod( unterminated_string, &end_ptr ) ;
+      if( *end_ptr == EOS ){
+	/* The full string */
+	strcpy( parse_p->number_base, unterminated_string ) ;
+      } else {
+	len = end_ptr - unterminated_string ;
+	strncpy( parse_p->number_base, unterminated_string, len ) ;
+	parse_p->number_base[len] = EOS ;
+      }
+      return( parse_p->number_base ) ;
+    }
+    return(NULL) ;
+} /* end sver_convert_real() */
