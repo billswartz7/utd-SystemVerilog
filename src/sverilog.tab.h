@@ -215,10 +215,9 @@
 #define SVID 471
 typedef union {
     char        		*string ;
-    int				integer ;
-    double                      real ;
     SVERILOG_OPERATOR_T 	operator ;
     SVERILOG_PORT_DIR_T		direction ;
     SVER_EXPRPTR 		expr ;
+    SVER_NUMBER 		number ;
 } YYSTYPE;
 extern YYSTYPE sverilog_lval;

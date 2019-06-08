@@ -52,11 +52,10 @@ static char yysccsid[] = "@(#)yaccpar  1.9 (TimberWolf version derived from Berk
     }
 typedef union {
     char        		*string ;
-    int				integer ;
-    double                      real ;
     SVERILOG_OPERATOR_T 	operator ;
     SVERILOG_PORT_DIR_T		direction ;
     SVER_EXPRPTR 		expr ;
+    SVER_NUMBER 		number ;
 } YYSTYPE;
 #define ANY 257
 #define END 258
@@ -304,8 +303,8 @@ static short yylhs[] = {                                        -1,
    15,   15,   15,  133,  133,   53,   53,  136,  136,  134,
   134,  134,   16,   16,   23,   23,   22,   22,   27,    5,
     5,    5,    5,    5,    5,    5,    5,    5,    5,   11,
-   11,    2,    2,    2,    2,    3,    3,    3,    3,    3,
-    3,    3,    3,    3,    4,    1,   12,   46,   46,  126,
+   11,    1,    1,    1,    1,    2,    2,    2,    2,    2,
+    2,    2,    2,    2,    3,    4,   12,   46,   46,  126,
   126,  137,  138,  138,  139,  139,  140,   20,   20,   20,
    20,   21,   21,   10,   37,  110,  141,  135,  135,  105,
     9,   28,   28,    8,    8,
@@ -349,7 +348,7 @@ static short yylen[] = {                                         2,
 static short yydefred[] = {                                      0,
     0,    0,    0,    2,    0,   19,  306,  305,    0,    0,
     0,    0,    0,    0,    0,    0,    4,    6,    0,    0,
-  310,  268,  269,  267,  266,   21,   20,  334,  335,  317,
+  310,  268,  269,  266,  267,   21,   20,  334,  335,  317,
     0,  313,    0,    0,    0,    5,   15,   14,    0,  311,
     0,  312,    0,    0,    7,    0,    0,   65,   67,    9,
     0,    0,    0,   58,   61,   80,   79,    0,   82,  314,
@@ -404,7 +403,7 @@ static short yydefred[] = {                                      0,
     0,    0,    0,  205,  175,  138,
 };
 static short yydgoto[] = {                                       3,
-    9,   88,   89,   90,   91,  455,  456,   92,  389,  278,
+   88,   89,   90,   10,   91,  455,  456,   92,  389,  278,
    93,   94,  344,  145,   96,   97,  143,   98,   99,  100,
   101,  448,  449,  498,  254,  500,  359,  360,  366,  411,
   412,    0,  190,  495,   14,   15,  141,    4,    5,   16,
@@ -535,7 +534,7 @@ static short yyrindex[] = {                                      6,
     0,  347,  348,    0,    0,    0,
 };
 static short yygindex[] = {                                      0,
-    0,    0,    0,   -1,    0,    0,    0,  -10, -180,    0,
+    0,    0,   -1,    0,    0,    0,    0,  -10, -180,    0,
     0,    0,  -11,  372,  460,    0,    0,    0,    0, -269,
   537,    0,  177,    0, -341,    0,    0,    0,    0, -247,
   121,    0, -182,    0,    0,    0,  524,    0,  457,    0,
@@ -552,8 +551,8 @@ static short yygindex[] = {                                      0,
     0,
 };
 #define YYTABLESIZE 3714
-static short yytable[] = {                                      10,
-   10,   40,   30,   47,   52,    1,   16,  208,  209,  259,
+static short yytable[] = {                                       9,
+    9,   40,   30,   47,   52,    1,   16,  208,  209,  259,
     3,   28,   29,  382,  358,   47,   86,   86,   85,   85,
    52,   56,  191,  436,  286,   28,   29,  286,  286,  187,
    30,   95,  428,  462,  122,  379,  120,  427,  367,   13,
@@ -2453,79 +2452,90 @@ case 278:
 break;
 case 290:
 {
-		   yyval.expr = sver_expr_start_int_expr( parse_p, yyvsp[0].integer, SVER_TOKEN_INTEGER_T ) ;
+		   yyval.expr = sver_expr_start_int_expr( parse_p, yyvsp[0].number.int_rep, yyvsp[0].number.string_rep, SVER_TOKEN_INTEGER_T ) ;
 		}
 break;
 case 291:
 {
 		   double convert_num ;
-		   convert_num = atof( yyvsp[0].string ) ; /* FIXME math */
-		   yyval.expr = sver_expr_start_float_expr( parse_p, convert_num, SVER_TOKEN_REAL_T ) ;
+		   char *string_rep ;
+		   string_rep = sver_convert_real( parse_p, yyvsp[0].string, &convert_num ) ;
+		   yyval.expr = sver_expr_start_float_expr( parse_p, convert_num, string_rep, SVER_TOKEN_REAL_T ) ;
 		}
 break;
 case 293:
 {
-		  yyval.integer = atoi( yyvsp[0].string ) ; /* FIXME math */
+		  yyval.number.string_rep = sver_convert_integer( parse_p, 8, yyvsp[0].string, &(yyval.number.int_rep) ) ;
 		}
 break;
 case 294:
 {
-		  yyval.integer = atoi( yyvsp[0].string ) ; /* FIXME math */
+		  yyval.number.string_rep = sver_convert_integer( parse_p, 2, yyvsp[0].string, &(yyval.number.int_rep) ) ;
 		}
 break;
 case 295:
 {
-		  yyval.integer = atoi( yyvsp[0].string ) ; /* FIXME math */
+		  yyval.number.string_rep = sver_convert_integer( parse_p, 16, yyvsp[0].string, &(yyval.number.int_rep) ) ;
 		}
 break;
 case 297:
 {
-		  yyval.integer = atoi(yyvsp[0].string) ;  /* FIXMEM math */
+		  sver_convert_integer( parse_p, 2, yyvsp[0].string, &(yyval.number.int_rep) ) ;
+		  yyval.number.string_rep = yyvsp[-1].string ;
 		}
 break;
 case 298:
 {
-		  yyval.integer = atoi(yyvsp[0].string) ;  /* FIXMEM math */
+		  sver_convert_integer( parse_p, 16, yyvsp[0].string, &(yyval.number.int_rep) ) ;
+		  yyval.number.string_rep = yyvsp[-1].string ;
 		}
 break;
 case 299:
 {
-		  yyval.integer = atoi(yyvsp[0].string) ;  /* FIXMEM math */
+		  sver_convert_integer( parse_p, 8, yyvsp[0].string, &(yyval.number.int_rep) ) ;
+		  yyval.number.string_rep = yyvsp[-1].string ;
 		}
 break;
 case 300:
 {
-		  yyval.integer = atoi(yyvsp[0].string) ;  /* FIXMEM math */
+		  sver_convert_integer( parse_p, 10, yyvsp[0].string, &(yyval.number.int_rep) ) ;
+		  yyval.number.string_rep = yyvsp[-1].string ;
 		}
 break;
 case 301:
 {
-		  yyval.integer = atoi(yyvsp[0].string) ;  /* FIXMEM math */
+		  sver_convert_integer( parse_p, 2, yyvsp[0].string, &(yyval.number.int_rep) ) ;
+		  yyval.number.string_rep = yyvsp[-2].string ;
 		}
 break;
 case 302:
 {
-		  yyval.integer = atoi(yyvsp[0].string) ;  /* FIXMEM math */
+		  sver_convert_integer( parse_p, 16, yyvsp[0].string, &(yyval.number.int_rep) ) ;
+		  yyval.number.string_rep = yyvsp[-2].string ;
 		}
 break;
 case 303:
 {
-		  yyval.integer = atoi(yyvsp[0].string) ;  /* FIXMEM math */
+		  sprintf( parse_p->number_buf, "%s%s%s", yyvsp[-2].string, yyvsp[-1].string, 
+		           sver_convert_integer( parse_p, 8, yyvsp[0].string, &(yyval.number.int_rep) ) ) ;
+		  yyval.number.string_rep = parse_p->number_buf ;
 		}
 break;
 case 304:
 {
-		  yyval.integer = atoi(yyvsp[0].string) ;  /* FIXMEM math */
+		  sprintf( parse_p->number_buf, "%s%s%s", yyvsp[-2].string, yyvsp[-1].string, 
+		           sver_convert_integer( parse_p, 10, yyvsp[0].string, &(yyval.number.int_rep) ) ) ;
+		  yyval.number.string_rep = parse_p->number_buf ;
 		}
 break;
 case 305:
 {
-		  yyval.integer = atoi( yyvsp[0].string ) ; /* FIXME_MATH */
+		  yyval.number.string_rep = sver_convert_integer( parse_p, 10, yyvsp[0].string, &(yyval.number.int_rep) ) ;
 		}
 break;
 case 306:
 {
-		  yyval.real = atof( yyvsp[0].string ) ; /* FIXME_MATH */
+		  yyval.number.string_rep = sver_convert_real( parse_p, yyvsp[0].string, &(yyval.number.float_rep) ) ;
 		}
 break;
 case 307:

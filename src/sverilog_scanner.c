@@ -2326,19 +2326,19 @@ YY_RULE_SETUP
 	YY_BREAK
 case 96:
 YY_RULE_SETUP
-{EMIT_TOKEN(parse_p,DEC_BASE, "d", sverilog_leng );}
+{sverilog_lval.string = sverilog_text; EMIT_TOKEN(parse_p,DEC_BASE, "d", sverilog_leng );}
 	YY_BREAK
 case 97:
 YY_RULE_SETUP
-{BEGIN(in_hex_val); EMIT_TOKEN(parse_p,HEX_BASE, "h", sverilog_leng);}
+{BEGIN(in_hex_val); sverilog_lval.string = sverilog_text; EMIT_TOKEN(parse_p,HEX_BASE, "h", sverilog_leng);}
 	YY_BREAK
 case 98:
 YY_RULE_SETUP
-{BEGIN(in_oct_val); EMIT_TOKEN(parse_p,OCT_BASE, "o", sverilog_leng);}
+{BEGIN(in_oct_val); sverilog_lval.string = sverilog_text; EMIT_TOKEN(parse_p,OCT_BASE, "o", sverilog_leng);}
 	YY_BREAK
 case 99:
 YY_RULE_SETUP
-{BEGIN(in_bin_val); EMIT_TOKEN(parse_p,BIN_BASE, "b", sverilog_leng );}
+{BEGIN(in_bin_val); sverilog_lval.string = sverilog_text; EMIT_TOKEN(parse_p,BIN_BASE, "b", sverilog_leng );}
 	YY_BREAK
 case 100:
 YY_RULE_SETUP
